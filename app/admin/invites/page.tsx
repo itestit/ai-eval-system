@@ -6,5 +6,11 @@ export default async function InviteCodePage() {
     orderBy: { createdAt: 'desc' },
   })
 
-  return <InviteCodePageClient codes={codes} />
+  const formattedCodes = codes.map(c => ({
+    ...c,
+    createdAt: c.createdAt.toISOString(),
+    usedAt: c.usedAt?.toISOString() || null,
+  }))
+
+  return <InviteCodePageClient codes={formattedCodes} />
 }

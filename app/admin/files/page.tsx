@@ -6,5 +6,10 @@ export default async function FilePage() {
     orderBy: { createdAt: 'desc' },
   })
 
-  return <FilePageClient files={files} />
+  const formattedFiles = files.map(f => ({
+    ...f,
+    createdAt: f.createdAt.toISOString(),
+  }))
+
+  return <FilePageClient files={formattedFiles} />
 }

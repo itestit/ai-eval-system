@@ -15,5 +15,16 @@ export default async function PromptPage() {
     }),
   ])
 
-  return <PromptPageClient prompts={prompts} files={files} models={models} />
+  const formattedPrompts = prompts.map(p => ({
+    ...p,
+    createdAt: p.createdAt.toISOString(),
+    updatedAt: p.updatedAt.toISOString(),
+  }))
+
+  const formattedFiles = files.map(f => ({
+    ...f,
+    createdAt: f.createdAt.toISOString(),
+  }))
+
+  return <PromptPageClient prompts={formattedPrompts} files={formattedFiles} models={models} />
 }

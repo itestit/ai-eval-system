@@ -6,5 +6,11 @@ export default async function ModelPage() {
     orderBy: { createdAt: 'desc' },
   })
 
-  return <ModelPageClient models={models} />
+  const formattedModels = models.map(m => ({
+    ...m,
+    createdAt: m.createdAt.toISOString(),
+    updatedAt: m.updatedAt.toISOString(),
+  }))
+
+  return <ModelPageClient models={formattedModels} />
 }

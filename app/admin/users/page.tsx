@@ -11,5 +11,11 @@ export default async function UserPage() {
     }
   })
 
-  return <UserPageClient users={users} />
+  const formattedUsers = users.map(u => ({
+    ...u,
+    createdAt: u.createdAt.toISOString(),
+    inviteCode: u.inviteCode ? { code: u.inviteCode.code } : null,
+  }))
+
+  return <UserPageClient users={formattedUsers} />
 }
