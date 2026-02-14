@@ -1,7 +1,6 @@
 import { NextRequest } from 'next/server'
 import { requireAuth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { OpenAIStream, StreamingTextResponse } from 'ai'
 import OpenAI from 'openai'
 
 export const runtime = 'edge'
@@ -63,7 +62,7 @@ export async function POST(req: NextRequest) {
       baseURL: model.baseUrl || undefined,
     })
 
-    // Create chat completion
+    // Create chat completion with streaming
     const response = await openai.chat.completions.create({
       model: model.modelName,
       messages: [
@@ -73,33 +72,58 @@ export async function POST(req: NextRequest) {
       stream: true,
     })
 
-    // Create stream with logging
-    const stream = OpenAIStream(response, {
-      onCompletion: async (completion) => {
-        // Calculate approximate tokens
-        const tokensUsed = Math.ceil((input.length + completion.length) / 4)
-        
-        // Deduct one evaluation and log
-        await prisma.$transaction([
-          prisma.user.update({
-            where: { id: session.userId },
-            data: { remainingEvals: { decrement: 1 } },
-          }),
-          prisma.evalLog.create({
-            data: {
-              userId: session.userId,
-              type,
-              input: input.slice(0, 50) + (input.length > 50 ? '...' : ''),
-              output: completion,
-              tokensUsed,
-              modelId: model.id,
-            },
-          }),
-        ])
+    // Build response stream
+    const encoder = new TextEncoder()
+    let fullResponse = ''
+
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          for await (const chunk of response) {
+            const content = chunk.choices[0]?.delta?.content || ''
+            if (content) {
+              fullResponse += content
+              // Send as SSE format
+              const data = `data: ${JSON.stringify({ content })}\n\n`
+              controller.enqueue(encoder.encode(data))
+            }
+          }
+          // Send done signal
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'))
+          
+          // Log completion and deduct credits
+          const tokensUsed = Math.ceil((input.length + fullResponse.length) / 4)
+          await prisma.$transaction([
+            prisma.user.update({
+              where: { id: session.userId },
+              data: { remainingEvals: { decrement: 1 } },
+            }),
+            prisma.evalLog.create({
+              data: {
+                userId: session.userId,
+                type,
+                input: input.slice(0, 50) + (input.length > 50 ? '...' : ''),
+                output: fullResponse,
+                tokensUsed,
+                modelId: model.id,
+              },
+            }),
+          ])
+          
+          controller.close()
+        } catch (error) {
+          controller.error(error)
+        }
       },
     })
 
-    return new StreamingTextResponse(stream)
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    })
   } catch (error) {
     console.error('评测错误:', error)
     
