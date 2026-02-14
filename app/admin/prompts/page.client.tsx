@@ -225,7 +225,7 @@ export default function PromptPageClient({ prompts, files, models }: PromptPageP
                 <label className="block text-sm font-medium mb-1">
                   系统提示词
                   <span className="text-muted-foreground font-normal ml-2">
-                    使用 {{user_input}} 作为用户输入占位符
+                    使用 {'{{user_input}}'} 作为用户输入占位符
                   </span>
                 </label>
                 
