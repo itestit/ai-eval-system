@@ -1,0 +1,135 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_PRISMA_URL")
+  directUrl = env("POSTGRES_URL_NON_POOLING")
+}
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  name            String?
+  passwordHash    String
+  avatar          String?
+  remainingEvals  Int       @default(99)
+  isAdmin         Boolean   @default(false)
+  
+  // Relations
+  inviteCode      InviteCode? @relation(fields: [inviteCodeId], references: [id])
+  inviteCodeId    String?
+  
+  evalLogs        EvalLog[]
+  auditLogs       AuditLog[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model InviteCode {
+  id              String    @id @default(cuid())
+  code            String    @unique
+  status          InviteStatus @default(UNUSED)
+  
+  // Relations
+  usedBy          User?
+  
+  createdAt       DateTime  @default(now())
+  usedAt          DateTime?
+}
+
+enum InviteStatus {
+  UNUSED
+  USED
+}
+
+model EvalLog {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id])
+  
+  type            EvalType
+  input           String    @db.Text
+  output          String?   @db.Text
+  tokensUsed      Int?
+  
+  modelId         String?
+  model           AIModel?  @relation(fields: [modelId], references: [id])
+  
+  createdAt       DateTime  @default(now())
+}
+
+enum EvalType {
+  SUGGESTION
+  POLICY
+}
+
+model AIModel {
+  id              String    @id @default(cuid())
+  name            String    // 显示名称
+  provider        String    // openai, azure, deepseek, claude
+  baseUrl         String?   // 自定义 base URL
+  apiKey          String    // 加密存储
+  modelName       String    // 具体模型名称
+  isActive        Boolean   @default(true)
+  
+  // Relations
+  evalLogs        EvalLog[]
+  promptTemplates PromptTemplate[]
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model PromptTemplate {
+  id              String    @id @default(cuid())
+  name            String
+  type            EvalType  // SUGGESTION 或 POLICY
+  systemPrompt    String    @db.Text
+  attachedFiles   String[]  // 关联的文件ID数组
+  
+  // Relations
+  modelId         String?
+  model           AIModel?  @relation(fields: [modelId], references: [id])
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model KnowledgeFile {
+  id              String    @id @default(cuid())
+  name            String
+  blobUrl         String
+  blobKey         String    @unique
+  size            Int
+  type            String    // text/plain, application/pdf
+  content         String?   @db.Text  // 文本内容缓存
+  
+  createdAt       DateTime  @default(now())
+}
+
+model AuditLog {
+  id              String    @id @default(cuid())
+  userId          String?
+  user            User?     @relation(fields: [userId], references: [id])
+  
+  action          String    // LOGIN, LOGOUT, EVAL, PASSWORD_CHANGE, etc.
+  ip              String?
+  userAgent       String?
+  metadata        Json?     // 额外信息
+  
+  createdAt       DateTime  @default(now())
+}
+
+model SystemConfig {
+  id              String    @id @default(cuid())
+  key             String    @unique
+  value           String
+  
+  updatedAt       DateTime  @updatedAt
+}
