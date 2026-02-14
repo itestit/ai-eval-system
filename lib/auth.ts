@@ -1,4 +1,4 @@
-import { SignJWT, jwtVerify } from 'jose'
+import { SignJWT, jwtVerify, JWTPayload as JoseJWTPayload } from 'jose'
 import bcrypt from 'bcryptjs'
 import { cookies } from 'next/headers'
 import { prisma } from './prisma'
@@ -7,7 +7,7 @@ const JWT_SECRET = new TextEncoder().encode(
   process.env.NEXTAUTH_SECRET || 'fallback-secret-change-in-production'
 )
 
-export interface JWTPayload {
+export interface JWTPayload extends JoseJWTPayload {
   userId: string
   email: string
   isAdmin: boolean
