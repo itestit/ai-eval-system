@@ -21,8 +21,8 @@ model User {
   isAdmin         Boolean   @default(false)
   
   // Relations
-  inviteCode      InviteCode? @relation(fields: [inviteCodeId], references: [id])
-  inviteCodeId    String?
+  inviteCode      InviteCode? @relation(name: "UserInviteCode", fields: [inviteCodeId], references: [id])
+  inviteCodeId    String?     @unique
   
   evalLogs        EvalLog[]
   auditLogs       AuditLog[]
@@ -37,7 +37,7 @@ model InviteCode {
   status          InviteStatus @default(UNUSED)
   
   // Relations
-  usedBy          User?
+  user            User?     @relation(name: "UserInviteCode")
   
   createdAt       DateTime  @default(now())
   usedAt          DateTime?
