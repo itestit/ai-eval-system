@@ -120,8 +120,7 @@ export default function PromptPageClient({ prompts, files, models }: PromptPageP
 
   return (
     <div className="p-8">
-      <div className="flex items-center justify-between mb-8"
-003e
+      <div className="flex items-center justify-between mb-8">
         <h1 className="text-2xl font-bold">Prompt 模板管理</h1>
         
         <button
@@ -301,7 +300,7 @@ export default function PromptPageClient({ prompts, files, models }: PromptPageP
       {/* File Picker Modal */}
       {showFilePicker && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-003e
+>
           <div className="bg-card rounded-xl p-6 max-w-md w-full max-h-[80vh] overflow-y-auto">
             <h3 className="text-lg font-semibold mb-4">选择知识库文件</h3>
             
