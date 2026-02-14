@@ -60,7 +60,7 @@ export async function PATCH(req: NextRequest) {
     
     // Extract file references from prompt
     const fileRefs = systemPrompt.match(/@([\w.-]+\.\w+)/g) || []
-    const fileNames = fileRefs.map(ref => ref.slice(1))
+    const fileNames = fileRefs.map((ref: string) => ref.slice(1))
     
     // Find file IDs
     const files = await prisma.knowledgeFile.findMany({
