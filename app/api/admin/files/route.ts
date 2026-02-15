@@ -3,7 +3,6 @@ import { requireAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { put, del } from '@vercel/blob'
 
-export const runtime = 'edge'
 
 export async function GET() {
   try {
