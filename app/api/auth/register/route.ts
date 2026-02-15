@@ -1,6 +1,6 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { hashPassword, createJWT, setAuthCookie } from '@/lib/auth'
+import { hashPassword, createJWT } from '@/lib/auth'
 import { rateLimit } from '@/lib/rate-limit'
 
 export async function POST(req: NextRequest) {
@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
     const { success } = await rateLimit(`register:${ip}`, 3, 300)
     
     if (!success) {
-      return Response.json(
+      return NextResponse.json(
         { error: '请求过于频繁，请稍后再试' },
         { status: 429 }
       )
@@ -18,14 +18,14 @@ export async function POST(req: NextRequest) {
     const { email, password, name, inviteCode } = await req.json()
 
     if (!email || !password || !inviteCode) {
-      return Response.json(
+      return NextResponse.json(
         { error: '缺少必要信息' },
         { status: 400 }
       )
     }
 
     if (password.length < 6) {
-      return Response.json(
+      return NextResponse.json(
         { error: '密码至少需要6位' },
         { status: 400 }
       )
@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     })
 
     if (!code || code.status !== 'UNUSED') {
-      return Response.json(
+      return NextResponse.json(
         { error: '邀请码无效或已被使用' },
         { status: 400 }
       )
@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     })
 
     if (existingUser) {
-      return Response.json(
+      return NextResponse.json(
         { error: '该邮箱已被注册' },
         { status: 400 }
       )
@@ -80,14 +80,31 @@ export async function POST(req: NextRequest) {
       return newUser
     })
 
-    // Create JWT and set cookie
+    // Create JWT
     const token = await createJWT({
       userId: user.id,
       email: user.email,
       isAdmin: user.isAdmin,
     })
 
-    await setAuthCookie(token)
+    // Create response with cookie
+    const response = NextResponse.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        isAdmin: user.isAdmin,
+      },
+    })
+
+    // Set cookie
+    response.cookies.set('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 24 * 7,
+      path: '/',
+    })
 
     // Log registration
     await prisma.auditLog.create({
@@ -99,17 +116,10 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    return Response.json({
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        isAdmin: user.isAdmin,
-      },
-    })
+    return response
   } catch (error) {
     console.error('Register error:', error)
-    return Response.json(
+    return NextResponse.json(
       { error: '注册失败，请稍后重试' },
       { status: 500 }
     )
