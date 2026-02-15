@@ -3,8 +3,6 @@ import { prisma } from '@/lib/prisma'
 import { hashPassword, verifyPassword, createJWT, setAuthCookie } from '@/lib/auth'
 import { rateLimit } from '@/lib/rate-limit'
 
-export const runtime = 'edge'
-
 export async function POST(req: NextRequest) {
   try {
     const ip = req.ip ?? '127.0.0.1'
