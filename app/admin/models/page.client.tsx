@@ -22,6 +22,8 @@ const providers = [
   { value: 'azure', label: 'Azure OpenAI', defaultUrl: '' },
   { value: 'deepseek', label: 'DeepSeek', defaultUrl: 'https://api.deepseek.com/v1' },
   { value: 'claude', label: 'Claude (Anthropic)', defaultUrl: 'https://api.anthropic.com/v1' },
+  { value: 'moonshot', label: 'Moonshot (月之暗面)', defaultUrl: 'https://api.moonshot.cn/v1' },
+  { value: 'glm', label: 'GLM (智谱AI)', defaultUrl: 'https://open.bigmodel.cn/api/paas/v4' },
   { value: 'custom', label: '自定义', defaultUrl: '' },
 ]
 
