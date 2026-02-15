@@ -1,5 +1,6 @@
 {
   "buildCommand": "npx prisma generate && next build",
   "installCommand": "npm install",
-  "framework": "nextjs"
+  "framework": "nextjs",
+  "protection": false
 }
