@@ -3,8 +3,6 @@ import { requireAuth } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import OpenAI from 'openai'
 
-export const runtime = 'edge'
-
 export async function POST(req: NextRequest) {
   try {
     const session = await requireAuth()
