@@ -4,8 +4,9 @@ import { requireAdmin } from '@/lib/auth'
 
 // GET /api/admin/config - Get all system configs (admin only)
 export async function GET(req: NextRequest) {
-  const admin = await requireAdmin()
-  if (!admin) {
+  try {
+    await requireAdmin()
+  } catch {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -23,8 +24,9 @@ export async function GET(req: NextRequest) {
 
 // POST /api/admin/config - Update system configs (admin only)
 export async function POST(req: NextRequest) {
-  const admin = await requireAdmin()
-  if (!admin) {
+  try {
+    await requireAdmin()
+  } catch {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -41,7 +43,7 @@ export async function POST(req: NextRequest) {
 
     // Upsert all configs
     await Promise.all(
-      configs.map(({ key, value }) =>
+      configs.map(({ key, value }: { key: string; value: string }) =>
         prisma.systemConfig.upsert({
           where: { key },
           update: { value },
