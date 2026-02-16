@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getCurrentUser } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 import { 
   LayoutDashboard, 
   Users, 
@@ -9,7 +10,19 @@ import {
   Settings,
   ScrollText,
   LogOut,
+  Cog,
 } from 'lucide-react'
+
+async function getSiteTitle(): Promise<string> {
+  try {
+    const config = await prisma.systemConfig.findUnique({
+      where: { key: 'siteTitle' },
+    })
+    return config?.value || 'AI智能评测系统'
+  } catch {
+    return 'AI智能评测系统'
+  }
+}
 
 export default async function AdminLayout({
   children,
@@ -22,6 +35,8 @@ export default async function AdminLayout({
     redirect('/')
   }
 
+  const siteTitle = await getSiteTitle()
+
   const navItems = [
     { href: '/admin', label: '仪表盘', icon: LayoutDashboard },
     { href: '/admin/users', label: '用户管理', icon: Users },
@@ -30,6 +45,7 @@ export default async function AdminLayout({
     { href: '/admin/prompts', label: 'Prompt模板', icon: ScrollText },
     { href: '/admin/files', label: '知识库', icon: Settings },
     { href: '/admin/logs', label: '日志审计', icon: ScrollText },
+    { href: '/admin/settings', label: '系统设置', icon: Cog },
   ]
 
   return (
@@ -37,7 +53,7 @@ export default async function AdminLayout({
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
         <div className="h-16 flex items-center px-6 border-b border-gray-200 bg-gray-900">
-          <h1 className="font-bold text-white text-lg">AI评测系统</h1>
+          <h1 className="font-bold text-white text-lg truncate">{siteTitle}</h1>
         </div>
         
         <nav className="flex-1 p-4">

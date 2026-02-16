@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Sparkles, Eye, EyeOff, Loader2 } from 'lucide-react'
@@ -12,7 +12,19 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [siteTitle, setSiteTitle] = useState('AI智能评测系统')
   const router = useRouter()
+
+  useEffect(() => {
+    fetch('/api/config')
+      .then(res => res.json())
+      .then(data => {
+        if (data.siteTitle) {
+          setSiteTitle(data.siteTitle)
+        }
+      })
+      .catch(console.error)
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -49,7 +61,7 @@ export default function LoginPage() {
             <Sparkles className="w-8 h-8 text-primary" />
           </div>
           <h1 className="text-2xl font-bold">欢迎回来</h1>
-          <p className="text-muted-foreground mt-1">登录您的 AI 评测账户</p>
+          <p className="text-muted-foreground mt-1">登录您的 {siteTitle} 账户</p>
         </div>
 
         {error && (

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Sparkles, Eye, EyeOff, Loader2, CheckCircle2 } from 'lucide-react'
@@ -15,7 +15,19 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [siteTitle, setSiteTitle] = useState('AI智能评测系统')
   const router = useRouter()
+
+  useEffect(() => {
+    fetch('/api/config')
+      .then(res => res.json())
+      .then(data => {
+        if (data.siteTitle) {
+          setSiteTitle(data.siteTitle)
+        }
+      })
+      .catch(console.error)
+  }, [])
 
   const verifyInviteCode = async (e: React.FormEvent) => {
     e.preventDefault()

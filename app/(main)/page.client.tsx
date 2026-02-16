@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Send, Copy, Check, Sparkles, AlertCircle, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -25,8 +25,21 @@ export default function EvalPageClient({ user }: EvalPageProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showNoCreditModal, setShowNoCreditModal] = useState(false)
+  const [pageHeader, setPageHeader] = useState('AI智能评测')
   const outputRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
+
+  // Fetch config on mount
+  useEffect(() => {
+    fetch('/api/config')
+      .then(res => res.json())
+      .then(data => {
+        if (data.pageHeader) {
+          setPageHeader(data.pageHeader)
+        }
+      })
+      .catch(console.error)
+  }, [])
 
   const handleSubmit = async () => {
     if (!input.trim() || isLoading) return
@@ -109,7 +122,7 @@ export default function EvalPageClient({ user }: EvalPageProps) {
       <header className="h-16 border-b flex items-center justify-between px-4 lg:px-6 bg-card">
         <div className="flex items-center gap-2">
           <Sparkles className="w-6 h-6 text-primary" />
-          <h1 className="text-lg font-semibold">AI智能评测</h1>
+          <h1 className="text-lg font-semibold">{pageHeader}</h1>
         </div>
         
         <div className="flex items-center gap-4">
