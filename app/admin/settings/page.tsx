@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Save, Settings, Globe, Type } from 'lucide-react'
 
@@ -14,6 +14,21 @@ export default function ConfigPage() {
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const router = useRouter()
+
+  // Fetch configs function
+  const fetchConfigs = useCallback(async () => {
+    try {
+      const res = await fetch('/api/config?t=' + Date.now())
+      if (!res.ok) throw new Error('获取配置失败')
+      const data = await res.json()
+      setConfigs({
+        siteTitle: data.siteTitle || 'AI智能评测系统',
+        pageHeader: data.pageHeader || 'AI智能评测',
+      })
+    } catch (err) {
+      console.error('获取配置失败:', err)
+    }
+  }, [])
 
   // Fetch configs and check auth on mount
   useEffect(() => {
@@ -55,12 +70,15 @@ export default function ConfigPage() {
       })
 
       if (!response.ok) {
-        throw new Error('保存失败')
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || '保存失败')
       }
 
+      // 重新加载配置确认保存成功
+      await fetchConfigs()
       setMessage('保存成功！')
     } catch (error) {
-      setMessage('保存失败，请重试')
+      setMessage(error instanceof Error ? error.message : '保存失败，请重试')
       console.error(error)
     } finally {
       setSaving(false)
@@ -164,7 +182,7 @@ export default function ConfigPage() {
 
       {/* Preview */}
       <div className="mt-8 bg-gray-50 rounded-lg p-6 border border-gray-200">
-        <h3 className="font-semibold text-gray-900 mb-4">预览</h3>
+        <h3 className="font-semibold text-gray-900 mb-4">当前设置（从数据库读取）</h3>
         <div className="space-y-3">
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-500 w-24">网站标题：</span>
