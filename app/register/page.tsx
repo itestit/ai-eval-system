@@ -19,7 +19,7 @@ export default function RegisterPage() {
   const router = useRouter()
 
   useEffect(() => {
-    fetch('/api/config')
+    fetch('/api/config?t=' + Date.now())
       .then(res => res.json())
       .then(data => {
         if (data.siteTitle) {

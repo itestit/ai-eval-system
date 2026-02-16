@@ -31,7 +31,7 @@ export default function EvalPageClient({ user }: EvalPageProps) {
 
   // Fetch config on mount
   useEffect(() => {
-    fetch('/api/config')
+    fetch('/api/config?t=' + Date.now())
       .then(res => res.json())
       .then(data => {
         if (data.pageHeader) {

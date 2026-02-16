@@ -18,7 +18,7 @@ export default function ConfigPage() {
   // Fetch configs and check auth on mount
   useEffect(() => {
     Promise.all([
-      fetch('/api/config').then(r => r.json()),
+      fetch('/api/config?t=' + Date.now()).then(r => r.json()),
       fetch('/api/user/profile').then(r => r.ok ? r.json() : null),
     ])
       .then(([configData, userData]) => {
