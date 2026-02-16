@@ -1,7 +1,6 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getCurrentUser } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
 import { 
   LayoutDashboard, 
   Users, 
@@ -12,17 +11,6 @@ import {
   LogOut,
   Cog,
 } from 'lucide-react'
-
-async function getSiteTitle(): Promise<string> {
-  try {
-    const config = await prisma.systemConfig.findUnique({
-      where: { key: 'siteTitle' },
-    })
-    return config?.value || 'AI智能评测系统'
-  } catch {
-    return 'AI智能评测系统'
-  }
-}
 
 export default async function AdminLayout({
   children,
@@ -35,7 +23,7 @@ export default async function AdminLayout({
     redirect('/')
   }
 
-  const siteTitle = await getSiteTitle()
+  const siteTitle = process.env.SITE_TITLE || 'AI评测系统'
 
   const navItems = [
     { href: '/admin', label: '仪表盘', icon: LayoutDashboard },
