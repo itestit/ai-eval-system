@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin } from '@/lib/auth'
+import { getSession } from '@/lib/auth'
 
 // GET /api/admin/config - Get all system configs (admin only)
 export async function GET(req: NextRequest) {
   try {
-    await requireAdmin()
-  } catch {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+    const session = await getSession()
+    if (!session || !session.isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-  try {
     const configs = await prisma.systemConfig.findMany()
     return NextResponse.json({ configs })
   } catch (error) {
@@ -25,12 +24,11 @@ export async function GET(req: NextRequest) {
 // POST /api/admin/config - Update system configs (admin only)
 export async function POST(req: NextRequest) {
   try {
-    await requireAdmin()
-  } catch {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-  }
+    const session = await getSession()
+    if (!session || !session.isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
 
-  try {
     const { configs } = await req.json()
 
     // configs should be an array of { key, value }
