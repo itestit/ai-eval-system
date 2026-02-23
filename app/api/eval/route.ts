@@ -6,7 +6,7 @@ import OpenAI from 'openai'
 export async function POST(req: NextRequest) {
   try {
     const session = await requireAuth()
-    const { input, type = 'SUGGESTION' } = await req.json()
+    const { input, sectionId } = await req.json()
 
     if (!input?.trim()) {
       return Response.json({ error: '输入不能为空' }, { status: 400 })
@@ -31,26 +31,52 @@ export async function POST(req: NextRequest) {
       return Response.json({ error: '未配置AI模型' }, { status: 500 })
     }
 
-    // Get prompt template
-    const promptTemplate = await prisma.promptTemplate.findFirst({
-      where: { type },
-    })
+    let systemPrompt = '你是一个专业的文本评测助手。请对用户输入的文本进行详细分析，给出建设性的建议和评价。'
+    let promptTemplateId: string | null = null
 
-    // Build system prompt
-    let systemPrompt = promptTemplate?.systemPrompt || 
-      '你是一个专业的文本评测助手。请对用户输入的文本进行详细分析，给出建设性的建议和评价。'
-
-    // Process file references (RAG-Lite)
-    if (promptTemplate?.attachedFiles?.length) {
-      const files = await prisma.knowledgeFile.findMany({
-        where: { id: { in: promptTemplate.attachedFiles } },
+    // If sectionId is provided, get prompt template from section
+    if (sectionId) {
+      const section = await prisma.section.findFirst({
+        where: {
+          id: sectionId,
+          isActive: true,
+          OR: [
+            { visibility: 'ALL' },
+            {
+              visibility: 'SPECIFIC',
+              accessUsers: {
+                some: { userId: session.userId }
+              }
+            }
+          ]
+        },
+        include: { promptTemplate: true }
       })
-      
-      for (const file of files) {
-        const placeholder = `@${file.name}`
-        if (systemPrompt.includes(placeholder) && file.content) {
-          systemPrompt = systemPrompt.replace(placeholder, file.content)
+
+      if (section?.promptTemplate) {
+        systemPrompt = section.promptTemplate.systemPrompt
+        promptTemplateId = section.promptTemplate.id
+
+        // Process file references (RAG-Lite)
+        if (section.promptTemplate.attachedFiles?.length) {
+          const files = await prisma.knowledgeFile.findMany({
+            where: { id: { in: section.promptTemplate.attachedFiles } },
+          })
+          
+          for (const file of files) {
+            const placeholder = `@${file.name}`
+            if (systemPrompt.includes(placeholder) && file.content) {
+              systemPrompt = systemPrompt.replace(placeholder, file.content)
+            }
+          }
         }
+      }
+    } else {
+      // Fallback to default prompt template
+      const promptTemplate = await prisma.promptTemplate.findFirst()
+      if (promptTemplate) {
+        systemPrompt = promptTemplate.systemPrompt
+        promptTemplateId = promptTemplate.id
       }
     }
 
@@ -82,12 +108,16 @@ export async function POST(req: NextRequest) {
             if (content) {
               fullResponse += content
               // Send as SSE format
-              const data = `data: ${JSON.stringify({ content })}\n\n`
+              const data = `data: ${JSON.stringify({ content })}
+
+`
               controller.enqueue(encoder.encode(data))
             }
           }
           // Send done signal
-          controller.enqueue(encoder.encode('data: [DONE]\n\n'))
+          controller.enqueue(encoder.encode('data: [DONE]
+
+'))
           
           // Log completion and deduct credits
           const tokensUsed = Math.ceil((input.length + fullResponse.length) / 4)
@@ -99,7 +129,7 @@ export async function POST(req: NextRequest) {
             prisma.evalLog.create({
               data: {
                 userId: session.userId,
-                type,
+                sectionId,
                 input: input.slice(0, 50) + (input.length > 50 ? '...' : ''),
                 output: fullResponse,
                 tokensUsed,

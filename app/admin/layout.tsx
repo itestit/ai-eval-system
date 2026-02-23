@@ -12,6 +12,7 @@ import {
   LogOut,
   Cog,
   MessageSquare,
+  LayoutGrid,
 } from 'lucide-react'
 
 export default async function AdminLayout({
@@ -34,6 +35,7 @@ export default async function AdminLayout({
   const navItems = [
     { href: '/admin', label: '仪表盘', icon: LayoutDashboard },
     { href: '/admin/users', label: '用户管理', icon: Users },
+    { href: '/admin/sections', label: '板块管理', icon: LayoutGrid },
     { href: '/admin/invites', label: '邀请码', icon: Ticket },
     { href: '/admin/models', label: '模型配置', icon: Bot },
     { href: '/admin/prompts', label: 'Prompt模板', icon: ScrollText },

@@ -19,14 +19,15 @@ model User {
   avatar          String?
   remainingEvals  Int       @default(99)
   isAdmin         Boolean   @default(false)
-  
+
   // Relations
   inviteCode      InviteCode? @relation(name: "UserInviteCode", fields: [inviteCodeId], references: [id])
   inviteCodeId    String?     @unique
-  
+
   evalLogs        EvalLog[]
   auditLogs       AuditLog[]
-  
+  sectionAccess   SectionAccess[]  // 可访问的板块
+
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 }
@@ -35,10 +36,10 @@ model InviteCode {
   id              String    @id @default(cuid())
   code            String    @unique
   status          InviteStatus @default(UNUSED)
-  
+
   // Relations
   user            User?     @relation(name: "UserInviteCode")
-  
+
   createdAt       DateTime  @default(now())
   usedAt          DateTime?
 }
@@ -52,15 +53,18 @@ model EvalLog {
   id              String    @id @default(cuid())
   userId          String
   user            User      @relation(fields: [userId], references: [id])
-  
+
+  sectionId       String?   // 所属板块
+  section         Section?  @relation(fields: [sectionId], references: [id])
+
   type            EvalType
   input           String    @db.Text
   output          String?   @db.Text
   tokensUsed      Int?
-  
+
   modelId         String?
   model           AIModel?  @relation(fields: [modelId], references: [id])
-  
+
   createdAt       DateTime  @default(now())
 }
 
@@ -77,13 +81,49 @@ model AIModel {
   apiKey          String    // 加密存储
   modelName       String    // 具体模型名称
   isActive        Boolean   @default(true)
-  
+
   // Relations
   evalLogs        EvalLog[]
   promptTemplates PromptTemplate[]
-  
+
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+}
+
+model Section {
+  id              String    @id @default(cuid())
+  name            String    // 板块名称
+  description     String?   // 板块描述
+  isActive        Boolean   @default(true)
+  visibility      SectionVisibility @default(ALL)  // 可见性：全部用户或指定用户
+  sortOrder       Int       @default(0)  // 排序顺序
+
+  // Relations
+  promptTemplateId String?
+  promptTemplate  PromptTemplate? @relation(fields: [promptTemplateId], references: [id])
+
+  accessUsers     SectionAccess[]  // 指定可见的用户
+  evalLogs        EvalLog[]
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+enum SectionVisibility {
+  ALL     // 全部用户可见
+  SPECIFIC // 仅指定用户可见
+}
+
+model SectionAccess {
+  id          String   @id @default(cuid())
+  sectionId   String
+  section     Section  @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt   DateTime @default(now())
+
+  @@unique([sectionId, userId])
 }
 
 model PromptTemplate {
@@ -92,11 +132,12 @@ model PromptTemplate {
   type            EvalType  // SUGGESTION 或 POLICY
   systemPrompt    String    @db.Text
   attachedFiles   String[]  // 关联的文件ID数组
-  
+
   // Relations
   modelId         String?
   model           AIModel?  @relation(fields: [modelId], references: [id])
-  
+  sections        Section[]  // 关联的板块
+
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 }
@@ -109,7 +150,7 @@ model KnowledgeFile {
   size            Int
   type            String    // text/plain, application/pdf
   content         String?   @db.Text  // 文本内容缓存
-  
+
   createdAt       DateTime  @default(now())
 }
 
@@ -117,12 +158,12 @@ model AuditLog {
   id              String    @id @default(cuid())
   userId          String?
   user            User?     @relation(fields: [userId], references: [id])
-  
+
   action          String    // LOGIN, LOGOUT, EVAL, PASSWORD_CHANGE, etc.
   ip              String?
   userAgent       String?
   metadata        Json?     // 额外信息
-  
+
   createdAt       DateTime  @default(now())
 }
 
@@ -130,6 +171,6 @@ model SystemConfig {
   id              String    @id @default(cuid())
   key             String    @unique
   value           String
-  
+
   updatedAt       DateTime  @updatedAt
 }

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Send, Copy, Check, Sparkles, AlertCircle, User } from 'lucide-react'
+import { Send, Copy, Check, Sparkles, AlertCircle, User, LayoutGrid } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
@@ -13,6 +13,18 @@ interface UserData {
   name: string | null
   remainingEvals: number
   isAdmin: boolean
+}
+
+interface Section {
+  id: string
+  name: string
+  description: string | null
+  promptTemplate: {
+    id: string
+    name: string
+    type: string
+    systemPrompt: string
+  } | null
 }
 
 interface EvalPageProps {
@@ -26,11 +38,18 @@ export default function EvalPageClient({ user }: EvalPageProps) {
   const [copied, setCopied] = useState(false)
   const [showNoCreditModal, setShowNoCreditModal] = useState(false)
   const [pageHeader, setPageHeader] = useState('AI智能评测')
+  
+  // 板块相关状态
+  const [sections, setSections] = useState<Section[]>([])
+  const [selectedSectionId, setSelectedSectionId] = useState<string>('')
+  const [sectionsLoading, setSectionsLoading] = useState(true)
+  
   const outputRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
 
-  // Fetch config on mount
+  // Fetch config and sections on mount
   useEffect(() => {
+    // 获取页面配置
     fetch('/api/config?t=' + Date.now())
       .then(res => res.json())
       .then(data => {
@@ -39,6 +58,21 @@ export default function EvalPageClient({ user }: EvalPageProps) {
         }
       })
       .catch(console.error)
+    
+    // 获取可访问的板块
+    fetch('/api/user/sections')
+      .then(res => {
+        if (!res.ok) throw new Error('获取板块失败')
+        return res.json()
+      })
+      .then(data => {
+        if (data.sections?.length > 0) {
+          setSections(data.sections)
+          setSelectedSectionId(data.sections[0].id)
+        }
+      })
+      .catch(console.error)
+      .finally(() => setSectionsLoading(false))
   }, [])
 
   const handleSubmit = async () => {
@@ -56,7 +90,10 @@ export default function EvalPageClient({ user }: EvalPageProps) {
       const response = await fetch('/api/eval', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ input: input.trim() }),
+        body: JSON.stringify({ 
+          input: input.trim(),
+          sectionId: selectedSectionId || undefined
+        }),
       })
 
       if (!response.ok) {
@@ -115,14 +152,41 @@ export default function EvalPageClient({ user }: EvalPageProps) {
   }
 
   const remainingZero = user.remainingEvals <= 0
+  
+  const selectedSection = sections.find(s => s.id === selectedSectionId)
 
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Header */}
       <header className="h-16 border-b flex items-center justify-between px-4 lg:px-6 bg-card">
-        <div className="flex items-center gap-2">
-          <Sparkles className="w-6 h-6 text-primary" />
-          <h1 className="text-lg font-semibold">{pageHeader}</h1>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-6 h-6 text-primary" />
+            <h1 className="text-lg font-semibold">{pageHeader}</h1>
+          </div>
+          
+          {/* 板块选择器 */}
+          {sections.length > 0 && (
+            <div className="hidden md:flex items-center gap-2 ml-4 pl-4 border-l">
+              <LayoutGrid className="w-4 h-4 text-muted-foreground" />
+              <select
+                value={selectedSectionId}
+                onChange={(e) => setSelectedSectionId(e.target.value)}
+                className="px-3 py-1.5 rounded-lg border text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 min-w-[140px]"
+                disabled={isLoading}
+              >
+                {sectionsLoading ? (
+                  <option>加载中...</option>
+                ) : (
+                  sections.map((section) => (
+                    <option key={section.id} value={section.id}>
+                      {section.name}
+                    </option>
+                  ))
+                )}
+              </select>
+            </div>
+          )}
         </div>
         
         <div className="flex items-center gap-4">
@@ -142,6 +206,34 @@ export default function EvalPageClient({ user }: EvalPageProps) {
         </div>
       </header>
 
+      {/* Mobile Section Selector */}
+      {sections.length > 0 && (
+        <div className="md:hidden px-4 py-2 border-b bg-card">
+          <div className="flex items-center gap-2">
+            <LayoutGrid className="w-4 h-4 text-muted-foreground" />
+            <select
+              value={selectedSectionId}
+              onChange={(e) => setSelectedSectionId(e.target.value)}
+              className="flex-1 px-3 py-2 rounded-lg border text-sm bg-background"
+              disabled={isLoading}
+            >
+              {sections.map((section) => (
+                <option key={section.id} value={section.id}>
+                  {section.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
+
+      {/* Section Description */}
+      {selectedSection?.description && (
+        <div className="px-4 py-2 bg-blue-50 border-b border-blue-100">
+          <p className="text-sm text-blue-700">{selectedSection.description}</p>
+        </div>
+      )}
+
       {/* Main Content */}
       <main className="flex-1 flex overflow-hidden">
         {/* Left Panel - Input */}
@@ -153,7 +245,10 @@ export default function EvalPageClient({ user }: EvalPageProps) {
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="在此粘贴您需要评测的文本内容..."
+              placeholder={selectedSection?.promptTemplate?.systemPrompt 
+                ? `当前使用模板：${selectedSection.promptTemplate.name}\n在此粘贴您需要评测的文本内容...`
+                : "在此粘贴您需要评测的文本内容..."
+              }
               className="w-full h-full min-h-[300px] resize-none rounded-lg border bg-background p-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
               disabled={isLoading || remainingZero}
             />
