@@ -31,7 +31,8 @@ export async function PATCH(req: NextRequest) {
   try {
     await requireAdmin()
     
-    const { userId, action, delta, isAdmin } = await req.json()
+    const body = await req.json()
+    const { userId, action, delta, isAdmin, newPassword } = body
     
     if (action === 'addEvals') {
       const user = await prisma.user.update({
@@ -63,8 +64,6 @@ export async function PATCH(req: NextRequest) {
     }
     
     if (action === 'resetPassword') {
-      const { newPassword } = await req.json()
-      
       if (!newPassword || newPassword.length < 6) {
         return Response.json({ error: '密码长度至少6位' }, { status: 400 })
       }
