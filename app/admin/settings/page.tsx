@@ -18,12 +18,27 @@ export default function ConfigPage() {
   // Fetch configs function
   const fetchConfigs = useCallback(async () => {
     try {
-      const res = await fetch('/api/config?t=' + Date.now())
+      // 使用 admin API 获取最新配置（避免缓存）
+      const res = await fetch('/api/admin/config?t=' + Date.now(), {
+        headers: { 'Cache-Control': 'no-cache' }
+      })
       if (!res.ok) throw new Error('获取配置失败')
       const data = await res.json()
+      
+      // 将数组转换为对象
+      const configMap: Record<string, string> = {
+        siteTitle: 'AI智能评测系统',
+        pageHeader: 'AI智能评测',
+      }
+      if (data.configs && Array.isArray(data.configs)) {
+        data.configs.forEach((c: { key: string; value: string }) => {
+          configMap[c.key] = c.value
+        })
+      }
+      
       setConfigs({
-        siteTitle: data.siteTitle || 'AI智能评测系统',
-        pageHeader: data.pageHeader || 'AI智能评测',
+        siteTitle: configMap.siteTitle,
+        pageHeader: configMap.pageHeader,
       })
     } catch (err) {
       console.error('获取配置失败:', err)
@@ -33,7 +48,9 @@ export default function ConfigPage() {
   // Fetch configs and check auth on mount
   useEffect(() => {
     Promise.all([
-      fetch('/api/config?t=' + Date.now()).then(r => r.json()),
+      fetch('/api/admin/config?t=' + Date.now(), {
+        headers: { 'Cache-Control': 'no-cache' }
+      }).then(r => r.json()),
       fetch('/api/user/profile').then(r => r.ok ? r.json() : null),
     ])
       .then(([configData, userData]) => {
@@ -41,9 +58,21 @@ export default function ConfigPage() {
           router.push('/login')
           return
         }
+        
+        // 将数组转换为对象
+        const configMap: Record<string, string> = {
+          siteTitle: 'AI智能评测系统',
+          pageHeader: 'AI智能评测',
+        }
+        if (configData.configs && Array.isArray(configData.configs)) {
+          configData.configs.forEach((c: { key: string; value: string }) => {
+            configMap[c.key] = c.value
+          })
+        }
+        
         setConfigs({
-          siteTitle: configData.siteTitle || 'AI智能评测系统',
-          pageHeader: configData.pageHeader || 'AI智能评测',
+          siteTitle: configMap.siteTitle,
+          pageHeader: configMap.pageHeader,
         })
         setLoading(false)
       })
@@ -74,9 +103,15 @@ export default function ConfigPage() {
         throw new Error(errorData.error || '保存失败')
       }
 
+      // 等待一小段时间确保数据库更新完成
+      await new Promise(resolve => setTimeout(resolve, 300))
+      
       // 重新加载配置确认保存成功
       await fetchConfigs()
       setMessage('保存成功！')
+      
+      // 强制刷新页面以确保所有组件获取最新配置
+      router.refresh()
     } catch (error) {
       setMessage(error instanceof Error ? error.message : '保存失败，请重试')
       console.error(error)
