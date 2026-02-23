@@ -126,6 +126,7 @@ export async function POST(req: NextRequest) {
               data: {
                 userId: session.userId,
                 sectionId,
+                type: 'SUGGESTION',
                 input: input.slice(0, 50) + (input.length > 50 ? '...' : ''),
                 output: fullResponse,
                 tokensUsed,
