@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Search, Plus, Minus, Ban, CheckCircle, UserCheck } from 'lucide-react'
+import { Search, Plus, Minus, Ban, CheckCircle, UserCheck, KeyRound, Eye, EyeOff } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface User {
@@ -24,6 +24,13 @@ export default function UserPageClient({ users }: UserPageProps) {
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [addCount, setAddCount] = useState(10)
   const [isUpdating, setIsUpdating] = useState(false)
+  
+  // 密码重置相关状态
+  const [resetPasswordUser, setResetPasswordUser] = useState<User | null>(null)
+  const [newPassword, setNewPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [isResetting, setIsResetting] = useState(false)
+  const [resetMessage, setResetMessage] = useState('')
 
   const filteredUsers = userList.filter(u => 
     u.email.toLowerCase().includes(search.toLowerCase()) ||
@@ -63,6 +70,42 @@ export default function UserPageClient({ users }: UserPageProps) {
       setUserList(prev => prev.map(u => 
         u.id === userId ? { ...u, isAdmin: !isAdmin } : u
       ))
+    }
+  }
+
+  // 重置密码
+  const resetPassword = async () => {
+    if (!resetPasswordUser || !newPassword) return
+    
+    setIsResetting(true)
+    setResetMessage('')
+    
+    try {
+      const res = await fetch('/api/admin/users', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          userId: resetPasswordUser.id, 
+          action: 'resetPassword', 
+          newPassword 
+        }),
+      })
+      
+      if (res.ok) {
+        setResetMessage('密码重置成功！')
+        setTimeout(() => {
+          setResetPasswordUser(null)
+          setNewPassword('')
+          setResetMessage('')
+        }, 1500)
+      } else {
+        const data = await res.json()
+        setResetMessage(data.error || '重置失败')
+      }
+    } catch (error) {
+      setResetMessage('重置失败，请重试')
+    } finally {
+      setIsResetting(false)
     }
   }
 
@@ -138,6 +181,13 @@ export default function UserPageClient({ users }: UserPageProps) {
                       <Plus className="w-4 h-4 text-green-600" />
                     </button>
                     <button
+                      onClick={() => setResetPasswordUser(user)}
+                      className="p-2 rounded-lg hover:bg-muted"
+                      title="重置密码"
+                    >
+                      <KeyRound className="w-4 h-4 text-orange-500" />
+                    </button>
+                    <button
                       onClick={() => toggleAdmin(user.id, user.isAdmin)}
                       className="p-2 rounded-lg hover:bg-muted"
                       title={user.isAdmin ? '取消管理员' : '设为管理员'}
@@ -207,6 +257,72 @@ export default function UserPageClient({ users }: UserPageProps) {
                 className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
               >
                 {isUpdating ? '处理中...' : '确认'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Password Modal */}
+      {resetPasswordUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card rounded-xl p-6 max-w-md w-full">
+            <h3 className="text-lg font-semibold mb-2">重置用户密码</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              用户: {resetPasswordUser.email}
+            </p>
+            
+            {resetMessage && (
+              <div className={`mb-4 p-3 rounded-lg text-sm ${
+                resetMessage.includes('成功') 
+                  ? 'bg-green-50 text-green-700 border border-green-200' 
+                  : 'bg-red-50 text-red-700 border border-red-200'
+              }`}>
+                {resetMessage}
+              </div>
+            )}
+            
+            <div className="mb-6">
+              <label className="block text-sm font-medium mb-2">新密码</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="请输入新密码"
+                  className="w-full px-4 py-2 pr-10 rounded-lg border font-medium"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setResetPasswordUser(null)
+                  setNewPassword('')
+                  setResetMessage('')
+                }}
+                className="flex-1 py-2.5 rounded-lg border hover:bg-muted"
+              >
+                取消
+              </button>
+              <button
+                onClick={resetPassword}
+                disabled={isResetting || !newPassword}
+                className="flex-1 py-2.5 rounded-lg bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50"
+              >
+                {isResetting ? '重置中...' : '重置密码'}
               </button>
             </div>
           </div>

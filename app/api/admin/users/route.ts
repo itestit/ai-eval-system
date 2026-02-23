@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { hashPassword } from '@/lib/auth'
 
 
 export async function GET() {
@@ -59,6 +60,31 @@ export async function PATCH(req: NextRequest) {
       })
       
       return Response.json({ success: true, isAdmin })
+    }
+    
+    if (action === 'resetPassword') {
+      const { newPassword } = await req.json()
+      
+      if (!newPassword || newPassword.length < 6) {
+        return Response.json({ error: '密码长度至少6位' }, { status: 400 })
+      }
+      
+      const passwordHash = await hashPassword(newPassword)
+      
+      await prisma.user.update({
+        where: { id: userId },
+        data: { passwordHash },
+      })
+      
+      // 记录审计日志
+      await prisma.auditLog.create({
+        data: {
+          action: 'ADMIN_RESET_PASSWORD',
+          metadata: { userId },
+        },
+      })
+      
+      return Response.json({ success: true })
     }
     
     return Response.json({ error: '未知操作' }, { status: 400 })
