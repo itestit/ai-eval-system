@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Sparkles, Eye, EyeOff, Loader2 } from 'lucide-react'
+import { Sparkles, Eye, EyeOff, Loader2, CheckCircle2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export default function LoginPage() {
@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [loginSuccess, setLoginSuccess] = useState(false)
   const [error, setError] = useState('')
   const [siteTitle, setSiteTitle] = useState('AI智能评测系统')
   const router = useRouter()
@@ -44,11 +45,16 @@ export default function LoginPage() {
         throw new Error(data.error || '登录失败')
       }
 
-      router.push('/')
-      router.refresh()
+      // 显示成功状态
+      setLoginSuccess(true)
+      
+      // 延迟跳转，让用户看到成功提示
+      setTimeout(() => {
+        router.push('/')
+        router.refresh()
+      }, 800)
     } catch (err) {
       setError(err instanceof Error ? err.message : '登录失败')
-    } finally {
       setIsLoading(false)
     }
   }
@@ -65,8 +71,21 @@ export default function LoginPage() {
         </div>
 
         {error && (
-          <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
+          <div className="mb-4 p-3 rounded-lg bg-destructive/10 text-destructive text-sm flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-destructive" />
             {error}
+          </div>
+        )}
+
+        {loginSuccess && (
+          <div className="mb-4 p-3 rounded-lg bg-green-50 text-green-700 text-sm border border-green-200 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="w-5 h-5 text-green-600" />
+              <div>
+                <p className="font-medium">登录成功！</p>
+                <p className="text-green-600/80 text-xs mt-0.5">正在跳转...</p>
+              </div>
+            </div>
           </div>
         )}
 
@@ -106,15 +125,22 @@ export default function LoginPage() {
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || loginSuccess}
             className={cn(
               "w-full py-2.5 rounded-lg font-medium transition-all",
-              isLoading
-                ? "bg-muted text-muted-foreground cursor-not-allowed"
-                : "bg-primary text-primary-foreground hover:bg-primary/90"
+              loginSuccess
+                ? "bg-green-500 text-white cursor-default"
+                : isLoading
+                  ? "bg-muted text-muted-foreground cursor-not-allowed"
+                  : "bg-primary text-primary-foreground hover:bg-primary/90"
             )}
           >
-            {isLoading ? (
+            {loginSuccess ? (
+              <span className="flex items-center justify-center gap-2">
+                <CheckCircle2 className="w-4 h-4" />
+                登录成功
+              </span>
+            ) : isLoading ? (
               <span className="flex items-center justify-center gap-2">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 登录中...
