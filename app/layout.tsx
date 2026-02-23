@@ -7,26 +7,31 @@ const inter = Inter({ subsets: ['latin'] })
 
 // 动态生成 metadata，从数据库读取配置
 export async function generateMetadata(): Promise<Metadata> {
-  // 从数据库获取配置
-  const configs = await prisma.systemConfig.findMany({
-    where: {
-      key: {
-        in: ['siteTitle', 'pageHeader'],
-      },
-    },
-  })
+  // 默认标题
+  let siteTitle = process.env.SITE_TITLE || 'AI智能评测系统'
 
-  const configMap: Record<string, string> = {
-    siteTitle: 'AI智能评测系统',
-    pageHeader: 'AI智能评测',
+  try {
+    // 从数据库获取配置（带超时保护）
+    const configs = await prisma.systemConfig.findMany({
+      where: {
+        key: {
+          in: ['siteTitle'],
+        },
+      },
+    })
+
+    configs.forEach((config) => {
+      if (config.key === 'siteTitle') {
+        siteTitle = config.value
+      }
+    })
+  } catch (error) {
+    // 构建时数据库可能不可用，使用默认值
+    console.log('使用默认标题（数据库连接失败）')
   }
 
-  configs.forEach((config) => {
-    configMap[config.key] = config.value
-  })
-
   return {
-    title: configMap.siteTitle,
+    title: siteTitle,
     description: '基于大语言模型的智能评测平台',
   }
 }
