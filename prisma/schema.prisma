@@ -95,7 +95,7 @@ model Section {
   name            String    // 板块名称
   description     String?   // 板块描述
   isActive        Boolean   @default(true)
-  visibility      SectionVisibility @default(ALL)  // 可见性：全部用户或指定用户
+  visibility      String    @default("ALL")  // 可见性：ALL 或 SPECIFIC
   sortOrder       Int       @default(0)  // 排序顺序
 
   // Relations
@@ -107,11 +107,6 @@ model Section {
 
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
-}
-
-enum SectionVisibility {
-  ALL     // 全部用户可见
-  SPECIFIC // 仅指定用户可见
 }
 
 model SectionAccess {
