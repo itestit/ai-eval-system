@@ -22,9 +22,7 @@ interface EvalLogsPageProps {
   logs: EvalLog[]
 }
 
-const typeLabels: Record<string, string
-text/tsx
-{
+const typeLabels: Record<string, string> = {
   SUGGESTION: '建议模式',
   POLICY: '策略模式',
 }
