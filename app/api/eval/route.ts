@@ -108,16 +108,12 @@ export async function POST(req: NextRequest) {
             if (content) {
               fullResponse += content
               // Send as SSE format
-              const data = `data: ${JSON.stringify({ content })}
-
-`
+              const data = `data: ${JSON.stringify({ content })}\n\n`
               controller.enqueue(encoder.encode(data))
             }
           }
           // Send done signal
-          controller.enqueue(encoder.encode('data: [DONE]
-
-'))
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'))
           
           // Log completion and deduct credits
           const tokensUsed = Math.ceil((input.length + fullResponse.length) / 4)
