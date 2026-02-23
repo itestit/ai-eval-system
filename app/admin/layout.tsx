@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { getCurrentUser } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 import { 
   LayoutDashboard, 
   Users, 
@@ -24,7 +25,11 @@ export default async function AdminLayout({
     redirect('/')
   }
 
-  const siteTitle = process.env.SITE_TITLE || 'AI评测系统'
+  // 从数据库获取网站标题
+  const siteTitleConfig = await prisma.systemConfig.findUnique({
+    where: { key: 'siteTitle' }
+  })
+  const siteTitle = siteTitleConfig?.value || 'AI评测系统'
 
   const navItems = [
     { href: '/admin', label: '仪表盘', icon: LayoutDashboard },

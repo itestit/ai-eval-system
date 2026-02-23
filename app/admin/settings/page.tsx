@@ -159,7 +159,7 @@ export default function ConfigPage() {
             </div>
             <div>
               <h2 className="font-semibold text-gray-900">网站标题</h2>
-              <p className="text-sm text-gray-500">浏览器标签页和页面标题显示的名称</p>
+              <p className="text-sm text-gray-500">浏览器标签页标题（HTML &lt;title&gt;）</p>
             </div>
           </div>
           <input
@@ -181,7 +181,7 @@ export default function ConfigPage() {
             </div>
             <div>
               <h2 className="font-semibold text-gray-900">页面头部标题</h2>
-              <p className="text-sm text-gray-500">用户登录后页面顶部显示的名称</p>
+              <p className="text-sm text-gray-500">用户前台页面顶部显示的标题</p>
             </div>
           </div>
           <input
