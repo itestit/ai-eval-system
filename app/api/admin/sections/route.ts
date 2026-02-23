@@ -43,12 +43,15 @@ export async function POST(req: NextRequest) {
       return Response.json({ error: '板块名称不能为空' }, { status: 400 })
     }
 
+    // 将空字符串转换为 null
+    const cleanPromptTemplateId = promptTemplateId || null
+
     // 创建板块
     const section = await prisma.section.create({
       data: {
         name,
         description,
-        promptTemplateId,
+        promptTemplateId: cleanPromptTemplateId,
         visibility: visibility || 'ALL',
         sortOrder: sortOrder || 0,
         ...(visibility === 'SPECIFIC' && accessUserIds?.length > 0 ? {
@@ -76,7 +79,7 @@ export async function POST(req: NextRequest) {
     if (error instanceof Error && error.message.includes('Admin')) {
       return Response.json({ error: '无权限' }, { status: 403 })
     }
-    return Response.json({ error: '创建失败' }, { status: 500 })
+    return Response.json({ error: '创建失败', details: String(error) }, { status: 500 })
   }
 }
 
@@ -91,6 +94,9 @@ export async function PATCH(req: NextRequest) {
       return Response.json({ error: '板块ID不能为空' }, { status: 400 })
     }
 
+    // 将空字符串转换为 null
+    const cleanPromptTemplateId = promptTemplateId || null
+
     // 先删除现有的访问权限（如果有）
     if (visibility === 'SPECIFIC') {
       await prisma.sectionAccess.deleteMany({
@@ -104,7 +110,7 @@ export async function PATCH(req: NextRequest) {
       data: {
         name,
         description,
-        promptTemplateId,
+        promptTemplateId: cleanPromptTemplateId,
         visibility,
         isActive,
         sortOrder,
@@ -133,7 +139,7 @@ export async function PATCH(req: NextRequest) {
     if (error instanceof Error && error.message.includes('Admin')) {
       return Response.json({ error: '无权限' }, { status: 403 })
     }
-    return Response.json({ error: '更新失败' }, { status: 500 })
+    return Response.json({ error: '更新失败', details: String(error) }, { status: 500 })
   }
 }
 
