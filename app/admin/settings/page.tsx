@@ -180,7 +180,7 @@ export default function ConfigPage() {
               <Type className="w-5 h-5 text-purple-600" />
             </div>
             <div>
-              <h2 className="font-semibold text-gray-900">页面头部标题</h2>
+              <h2 className="font-semibold text-gray-900">板块名称</h2>
               <p className="text-sm text-gray-500">用户前台页面顶部显示的标题</p>
             </div>
           </div>
