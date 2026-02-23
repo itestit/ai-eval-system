@@ -9,7 +9,7 @@ interface Section {
   name: string
   description: string | null
   isActive: boolean
-  visibility: 'ALL' | 'SPECIFIC'
+  visibility: string
   sortOrder: number
   promptTemplateId: string | null
   promptTemplate: { id: string; name: string } | null
@@ -76,7 +76,7 @@ export default function SectionsPageClient({ sections, promptTemplates, users }:
       name: section.name,
       description: section.description || '',
       promptTemplateId: section.promptTemplateId || '',
-      visibility: section.visibility,
+      visibility: (section.visibility as 'ALL' | 'SPECIFIC') || 'ALL',
       accessUserIds: section.accessUsers.map(u => u.userId),
       isActive: section.isActive,
       sortOrder: section.sortOrder
