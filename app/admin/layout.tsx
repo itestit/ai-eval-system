@@ -10,6 +10,7 @@ import {
   ScrollText,
   LogOut,
   Cog,
+  MessageSquare,
 } from 'lucide-react'
 
 export default async function AdminLayout({
@@ -32,6 +33,7 @@ export default async function AdminLayout({
     { href: '/admin/models', label: '模型配置', icon: Bot },
     { href: '/admin/prompts', label: 'Prompt模板', icon: ScrollText },
     { href: '/admin/files', label: '知识库', icon: Settings },
+    { href: '/admin/eval-logs', label: '用户输入记录', icon: MessageSquare },
     { href: '/admin/logs', label: '日志审计', icon: ScrollText },
     { href: '/admin/settings', label: '系统设置', icon: Cog },
   ]
