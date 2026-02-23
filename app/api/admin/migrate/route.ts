@@ -2,17 +2,15 @@ import { NextRequest } from 'next/server'
 import { requireAdmin } from '@/lib/auth'
 import { PrismaClient } from '@prisma/client'
 
-// 执行数据库迁移
-export async function POST(req: NextRequest) {
+// 执行数据库迁移的核心逻辑
+async function runMigration() {
+  const prisma = new PrismaClient()
+  
   try {
-    await requireAdmin()
-    
-    const prisma = new PrismaClient()
-    
     // 检查 Section 表是否存在
     try {
       await prisma.$queryRaw`SELECT 1 FROM "Section" LIMIT 1`
-      return Response.json({ message: 'Section 表已存在' })
+      return { success: true, message: 'Section 表已存在' }
     } catch {
       // 表不存在，创建表
     }
@@ -44,54 +42,80 @@ export async function POST(req: NextRequest) {
     `
     
     // 添加外键
-    await prisma.$executeRaw`
-      DO $$ BEGIN
-        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'Section_promptTemplateId_fkey') THEN
-          ALTER TABLE "Section" ADD CONSTRAINT "Section_promptTemplateId_fkey" 
-          FOREIGN KEY ("promptTemplateId") REFERENCES "PromptTemplate"("id") ON DELETE SET NULL;
-        END IF;
-      END $$;
-    `
+    try {
+      await prisma.$executeRaw`
+        ALTER TABLE "Section" ADD CONSTRAINT "Section_promptTemplateId_fkey" 
+        FOREIGN KEY ("promptTemplateId") REFERENCES "PromptTemplate"("id") ON DELETE SET NULL
+      `
+    } catch {}
     
-    await prisma.$executeRaw`
-      DO $$ BEGIN
-        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'SectionAccess_sectionId_fkey') THEN
-          ALTER TABLE "SectionAccess" ADD CONSTRAINT "SectionAccess_sectionId_fkey" 
-          FOREIGN KEY ("sectionId") REFERENCES "Section"("id") ON DELETE CASCADE;
-        END IF;
-      END $$;
-    `
+    try {
+      await prisma.$executeRaw`
+        ALTER TABLE "SectionAccess" ADD CONSTRAINT "SectionAccess_sectionId_fkey" 
+        FOREIGN KEY ("sectionId") REFERENCES "Section"("id") ON DELETE CASCADE
+      `
+    } catch {}
     
-    await prisma.$executeRaw`
-      DO $$ BEGIN
-        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'SectionAccess_userId_fkey') THEN
-          ALTER TABLE "SectionAccess" ADD CONSTRAINT "SectionAccess_userId_fkey" 
-          FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE;
-        END IF;
-      END $$;
-    `
+    try {
+      await prisma.$executeRaw`
+        ALTER TABLE "SectionAccess" ADD CONSTRAINT "SectionAccess_userId_fkey" 
+        FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE
+      `
+    } catch {}
     
     // 添加 EvalLog.sectionId 列
     try {
       await prisma.$executeRaw`ALTER TABLE "EvalLog" ADD COLUMN "sectionId" TEXT`
-    } catch {
-      // 列已存在
-    }
+    } catch {}
     
-    await prisma.$executeRaw`
-      DO $$ BEGIN
-        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'EvalLog_sectionId_fkey') THEN
-          ALTER TABLE "EvalLog" ADD CONSTRAINT "EvalLog_sectionId_fkey" 
-          FOREIGN KEY ("sectionId") REFERENCES "Section"("id") ON DELETE SET NULL;
-        END IF;
-      END $$;
-    `
+    try {
+      await prisma.$executeRaw`
+        ALTER TABLE "EvalLog" ADD CONSTRAINT "EvalLog_sectionId_fkey" 
+        FOREIGN KEY ("sectionId") REFERENCES "Section"("id") ON DELETE SET NULL
+      `
+    } catch {}
     
-    await prisma.$disconnect()
-    
-    return Response.json({ success: true, message: '数据库迁移完成' })
+    return { success: true, message: '数据库迁移完成' }
   } catch (error) {
     console.error('Migration error:', error)
+    return { success: false, error: '迁移失败', details: String(error) }
+  } finally {
+    await prisma.$disconnect()
+  }
+}
+
+// GET 请求 - 用于执行迁移（需要管理员登录）
+export async function GET(req: NextRequest) {
+  try {
+    await requireAdmin()
+    const result = await runMigration()
+    return Response.json(result)
+  } catch (error) {
+    console.error('Migration error:', error)
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return Response.json({ error: '未登录' }, { status: 401 })
+    }
+    if (error instanceof Error && error.message.includes('Admin')) {
+      return Response.json({ error: '无权限' }, { status: 403 })
+    }
+    return Response.json({ error: '迁移失败', details: String(error) }, { status: 500 })
+  }
+}
+
+// POST 请求 - 用于执行迁移（需要管理员登录）
+export async function POST(req: NextRequest) {
+  try {
+    await requireAdmin()
+    const result = await runMigration()
+    return Response.json(result)
+  } catch (error) {
+    console.error('Migration error:', error)
+    if (error instanceof Error && error.message === 'Unauthorized') {
+      return Response.json({ error: '未登录' }, { status: 401 })
+    }
+    if (error instanceof Error && error.message.includes('Admin')) {
+      return Response.json({ error: '无权限' }, { status: 403 })
+    }
     return Response.json({ error: '迁移失败', details: String(error) }, { status: 500 })
   }
 }
