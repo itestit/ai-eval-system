@@ -75,6 +75,12 @@ export default function EvalPageClient({ user }: EvalPageProps) {
       .finally(() => setSectionsLoading(false))
   }, [])
 
+  // 提取 <output> 标签之间的内容
+  const extractOutputContent = (text: string): string => {
+    const match = text.match(/<output>([\s\S]*?)<\/output>/)
+    return match ? match[1].trim() : text
+  }
+
   const handleSubmit = async () => {
     if (!input.trim() || isLoading) return
     
@@ -85,6 +91,7 @@ export default function EvalPageClient({ user }: EvalPageProps) {
 
     setIsLoading(true)
     setOutput('')
+    let rawOutput = ''
 
     try {
       const response = await fetch('/api/eval', {
@@ -118,7 +125,10 @@ export default function EvalPageClient({ user }: EvalPageProps) {
             try {
               const parsed = JSON.parse(data)
               if (parsed.content) {
-                setOutput(prev => prev + parsed.content)
+                rawOutput += parsed.content
+                // 提取 <output> 标签内容并显示
+                const extracted = extractOutputContent(rawOutput)
+                setOutput(extracted)
                 // Auto scroll
                 if (outputRef.current) {
                   outputRef.current.scrollTop = outputRef.current.scrollHeight
