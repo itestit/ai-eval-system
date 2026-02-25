@@ -51,16 +51,9 @@ export default function FilePageClient({ files }: FilePageProps) {
   }
 
   const uploadFile = async (file: File) => {
-    // Validate file type
-    const allowedTypes = ['text/plain', 'application/pdf']
-    if (!allowedTypes.includes(file.type) && !file.name.endsWith('.txt') && !file.name.endsWith('.pdf')) {
-      alert('仅支持 .txt 和 .pdf 文件')
-      return
-    }
-
-    // Validate file size (10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      alert('文件大小不能超过 10MB')
+    // Validate file size (50MB)
+    if (file.size > 50 * 1024 * 1024) {
+      alert('文件大小不能超过 50MB')
       return
     }
 
@@ -128,7 +121,6 @@ export default function FilePageClient({ files }: FilePageProps) {
       >
         <input
           type="file"
-          accept=".txt,.pdf"
           onChange={handleFileInput}
           className="hidden"
           id="file-upload"
@@ -153,7 +145,7 @@ export default function FilePageClient({ files }: FilePageProps) {
             </p>
             
             <p className="text-sm text-muted-foreground">
-              支持 .txt 和 .pdf 格式，最大 10MB
+              支持任意文件格式，最大 50MB
             </p>
           </div>
         </label>
@@ -183,7 +175,12 @@ export default function FilePageClient({ files }: FilePageProps) {
                 <td className="px-6 py-4 text-sm">
                   <span className="px-2 py-1 rounded-full text-xs bg-muted"
                 >
-                    {file.type === 'application/pdf' ? 'PDF' : 'Text'}
+                    {file.type?.includes('pdf') ? 'PDF' : 
+                     file.type?.includes('text') ? 'Text' : 
+                     file.type?.includes('image') ? 'Image' :
+                     file.type?.includes('video') ? 'Video' :
+                     file.type?.includes('audio') ? 'Audio' :
+                     file.name?.split('.').pop()?.toUpperCase() || 'File'}
                   </span>
                 </td>
                 <td className="px-6 py-4 text-sm text-muted-foreground">

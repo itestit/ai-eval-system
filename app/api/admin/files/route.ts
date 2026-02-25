@@ -35,17 +35,9 @@ export async function POST(req: NextRequest) {
       return Response.json({ error: '没有文件' }, { status: 400 })
     }
 
-    // Validate file type
-    const allowedTypes = ['text/plain', 'application/pdf']
-    if (!allowedTypes.includes(file.type) && 
-        !file.name.endsWith('.txt') && 
-        !file.name.endsWith('.pdf')) {
-      return Response.json({ error: '仅支持 .txt 和 .pdf 文件' }, { status: 400 })
-    }
-
-    // Validate file size (10MB)
-    if (file.size > 10 * 1024 * 1024) {
-      return Response.json({ error: '文件大小不能超过 10MB' }, { status: 400 })
+    // Validate file size (50MB)
+    if (file.size > 50 * 1024 * 1024) {
+      return Response.json({ error: '文件大小不能超过 50MB' }, { status: 400 })
     }
 
     // Upload to Vercel Blob
