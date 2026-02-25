@@ -76,9 +76,26 @@ export default function EvalPageClient({ user }: EvalPageProps) {
   }, [])
 
   // 提取 <output> 标签之间的内容
-  const extractOutputContent = (text: string): string => {
-    const match = text.match(/<output>([\s\S]*?)<\/output>/)
-    return match ? match[1].trim() : text
+  // 只在检测到完整的 <output> 标签后才开始显示内容
+  const extractOutputContent = (text: string): string | null => {
+    // 检查是否包含 <output> 标签开始
+    const outputStartIndex = text.indexOf('<output>')
+    if (outputStartIndex === -1) {
+      // 还没有 <output> 标签，返回 null（不显示任何内容）
+      return null
+    }
+    
+    // 检查是否包含 </output> 标签结束
+    const outputEndIndex = text.indexOf('</output>')
+    if (outputEndIndex === -1) {
+      // 有开始但没有结束，提取已累积的 <output> 标签内的内容
+      const content = text.slice(outputStartIndex + 8) // 8 是 '<output>' 的长度
+      return content.trim()
+    }
+    
+    // 完整的 <output>...</output>，提取标签之间的内容
+    const content = text.slice(outputStartIndex + 8, outputEndIndex)
+    return content.trim()
   }
 
   const handleSubmit = async () => {
@@ -128,10 +145,13 @@ export default function EvalPageClient({ user }: EvalPageProps) {
                 rawOutput += parsed.content
                 // 提取 <output> 标签内容并显示
                 const extracted = extractOutputContent(rawOutput)
-                setOutput(extracted)
-                // Auto scroll
-                if (outputRef.current) {
-                  outputRef.current.scrollTop = outputRef.current.scrollHeight
+                // 只在检测到 <output> 标签后才更新显示
+                if (extracted !== null) {
+                  setOutput(extracted)
+                  // Auto scroll
+                  if (outputRef.current) {
+                    outputRef.current.scrollTop = outputRef.current.scrollHeight
+                  }
                 }
               }
             } catch {
@@ -335,14 +355,14 @@ export default function EvalPageClient({ user }: EvalPageProps) {
                   {isLoading ? (
                     <div className="flex flex-col items-center gap-3">
                       <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                      <p className="text-sm">正在生成评测结果...</p>
+                      <p className="text-sm">AI 正在分析中...</p>
                     </div>
                   ) : (
                     <p className="text-sm">评测结果将在这里显示</p>
                   )}
                 </div>
               )}
-              {isLoading && <span className="typing-cursor" />}
+              {isLoading && output && <span className="typing-cursor" />}
             </div>
           </div>
         </div>
