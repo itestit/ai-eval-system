@@ -57,8 +57,8 @@ export async function PATCH(req: NextRequest) {
     
     const { id, name, type, systemPrompt, attachedFiles, modelId } = await req.json()
     
-    // Extract file references from prompt
-    const fileRefs = systemPrompt.match(/@([\w.-]+\.\w+)/g) || []
+    // Extract file references from prompt (支持中文文件名)
+    const fileRefs = systemPrompt.match(/@([^\s\n]+)/g) || []
     const fileNames = fileRefs.map((ref: string) => ref.slice(1))
     
     // Find file IDs

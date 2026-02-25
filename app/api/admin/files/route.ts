@@ -47,7 +47,9 @@ export async function POST(req: NextRequest) {
 
     // Read file content for text files
     let content: string | null = null
-    if (file.type === 'text/plain' || file.name.endsWith('.txt')) {
+    const textFileExtensions = ['.txt', '.md', '.markdown', '.json', '.csv', '.yaml', '.yml', '.xml', '.html', '.htm', '.css', '.js', '.ts', '.jsx', '.tsx']
+    const isTextFile = file.type?.startsWith('text/') || textFileExtensions.some(ext => file.name.toLowerCase().endsWith(ext))
+    if (isTextFile) {
       content = await file.text()
     }
 
