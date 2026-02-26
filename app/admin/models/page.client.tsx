@@ -50,14 +50,46 @@ export default function ModelPageClient({ models }: ModelPageProps) {
       const data = await res.json()
       setModelList([data.model, ...modelList])
       setIsAdding(false)
-      setFormData({
-        name: '',
-        provider: 'openai',
-        baseUrl: '',
-        apiKey: '',
-        modelName: 'gpt-4-turbo',
-      })
+      resetForm()
     }
+  }
+
+  const handleEdit = async () => {
+    if (!editingId) return
+    
+    const res = await fetch('/api/admin/models', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: editingId, ...formData }),
+    })
+    
+    if (res.ok) {
+      const data = await res.json()
+      setModelList(prev => prev.map(m => m.id === editingId ? data.model : m))
+      setEditingId(null)
+      resetForm()
+    }
+  }
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      provider: 'openai',
+      baseUrl: '',
+      apiKey: '',
+      modelName: 'gpt-4-turbo',
+    })
+  }
+
+  const startEdit = (model: AIModel) => {
+    setEditingId(model.id)
+    setFormData({
+      name: model.name,
+      provider: model.provider,
+      baseUrl: model.baseUrl || '',
+      apiKey: '', // API key is not returned from server, user needs to re-enter or leave blank
+      modelName: model.modelName,
+    })
   }
 
   const toggleActive = async (id: string, isActive: boolean) => {
@@ -157,6 +189,13 @@ export default function ModelPageClient({ models }: ModelPageProps) {
                   <Power className="w-4 h-4" />
                 </button>
                 <button
+                  onClick={() => startEdit(model)}
+                  className="p-2 rounded-lg hover:bg-blue-100 text-blue-500"
+                  title="编辑"
+                >
+                  <Edit2 className="w-4 h-4" />
+                </button>
+                <button
                   onClick={() => deleteModel(model.id)}
                   className="p-2 rounded-lg hover:bg-red-100 text-red-500"
                   title="删除"
@@ -175,11 +214,11 @@ export default function ModelPageClient({ models }: ModelPageProps) {
         </div>
       )}
 
-      {/* Add Modal */}
-      {isAdding && (
+      {/* Add/Edit Modal */}
+      {(isAdding || editingId) && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-card rounded-xl p-6 max-w-lg w-full max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-semibold mb-4">添加AI模型</h3>
+            <h3 className="text-lg font-semibold mb-4">{editingId ? '编辑AI模型' : '添加AI模型'}</h3>
             
             <div className="space-y-4">
               <div>
@@ -222,12 +261,12 @@ export default function ModelPageClient({ models }: ModelPageProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium mb-1">API Key *</label>
+                <label className="block text-sm font-medium mb-1">API Key {editingId && <span className="text-muted-foreground font-normal">(留空表示不修改)</span>}</label>
                 <input
                   type="password"
                   value={formData.apiKey}
                   onChange={(e) => setFormData({ ...formData, apiKey: e.target.value })}
-                  placeholder="sk-..."
+                  placeholder={editingId ? "留空表示不修改" : "sk-..."}
                   className="w-full px-3 py-2 rounded-lg border font-mono text-sm"
                 />
               </div>
@@ -246,17 +285,21 @@ export default function ModelPageClient({ models }: ModelPageProps) {
 
             <div className="flex gap-3 mt-6">
               <button
-                onClick={() => setIsAdding(false)}
+                onClick={() => {
+                  setIsAdding(false)
+                  setEditingId(null)
+                  resetForm()
+                }}
                 className="flex-1 py-2.5 rounded-lg border hover:bg-muted"
               >
                 取消
               </button>
               <button
-                onClick={handleAdd}
-                disabled={!formData.name || !formData.apiKey || !formData.modelName}
+                onClick={editingId ? handleEdit : handleAdd}
+                disabled={!formData.name || (!editingId && !formData.apiKey) || !formData.modelName}
                 className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
               >
-                添加
+                {editingId ? '保存修改' : '添加'}
               </button>
             </div>
           </div>

@@ -61,14 +61,27 @@ export async function PATCH(req: NextRequest) {
   try {
     await requireAdmin()
     
-    const { id, isActive } = await req.json()
+    const { id, name, provider, baseUrl, apiKey, modelName, isActive } = await req.json()
     
-    await prisma.aIModel.update({
+    if (!id) {
+      return Response.json({ error: '缺少ID' }, { status: 400 })
+    }
+    
+    // Build update data dynamically
+    const updateData: any = {}
+    if (name !== undefined) updateData.name = name
+    if (provider !== undefined) updateData.provider = provider
+    if (baseUrl !== undefined) updateData.baseUrl = baseUrl || null
+    if (apiKey !== undefined && apiKey !== '') updateData.apiKey = apiKey
+    if (modelName !== undefined) updateData.modelName = modelName
+    if (isActive !== undefined) updateData.isActive = isActive
+    
+    const model = await prisma.aIModel.update({
       where: { id },
-      data: { isActive },
+      data: updateData,
     })
     
-    return Response.json({ success: true })
+    return Response.json({ model })
   } catch (error) {
     console.error('Update model error:', error)
     if (error instanceof Error && error.message === 'Unauthorized') {
