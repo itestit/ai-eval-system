@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Download, Filter, MessageSquare, Eye, FileText, X, Search } from 'lucide-react'
+import { Download, Filter, MessageSquare, Eye, FileText, X, Search, Trash2, AlertTriangle, CheckSquare, Square } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface EvalLog {
   id: string
@@ -27,10 +28,15 @@ const typeLabels: Record<string, string> = {
   POLICY: '策略模式',
 }
 
-export default function EvalLogsPageClient({ logs }: EvalLogsPageProps) {
+export default function EvalLogsPageClient({ logs: initialLogs }: EvalLogsPageProps) {
+  const [logs, setLogs] = useState(initialLogs)
   const [filter, setFilter] = useState('')
   const [selectedLog, setSelectedLog] = useState<EvalLog | null>(null)
   const [dateRange, setDateRange] = useState('7')
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [logToDelete, setLogToDelete] = useState<EvalLog | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const filteredLogs = logs.filter(log => {
     if (filter && !log.userEmail?.includes(filter) && !log.input.includes(filter)) {
@@ -43,6 +49,71 @@ export default function EvalLogsPageClient({ logs }: EvalLogsPageProps) {
     }
     return true
   })
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredLogs.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(filteredLogs.map(log => log.id)))
+    }
+  }
+
+  const toggleSelect = (id: string) => {
+    const newSelected = new Set(selectedIds)
+    if (newSelected.has(id)) {
+      newSelected.delete(id)
+    } else {
+      newSelected.add(id)
+    }
+    setSelectedIds(newSelected)
+  }
+
+  const handleDelete = async (log: EvalLog) => {
+    setLogToDelete(log)
+    setShowDeleteModal(true)
+  }
+
+  const handleBatchDelete = () => {
+    setLogToDelete(null)
+    setShowDeleteModal(true)
+  }
+
+  const confirmDelete = async () => {
+    setIsDeleting(true)
+    try {
+      if (logToDelete) {
+        // 单条删除
+        const res = await fetch(`/api/admin/eval-logs?id=${logToDelete.id}`, {
+          method: 'DELETE'
+        })
+        if (res.ok) {
+          setLogs(prev => prev.filter(l => l.id !== logToDelete.id))
+          setSelectedIds(prev => {
+            const newSet = new Set(prev)
+            newSet.delete(logToDelete.id)
+            return newSet
+          })
+        }
+      } else if (selectedIds.size > 0) {
+        // 批量删除
+        const ids = Array.from(selectedIds).join(',')
+        const res = await fetch(`/api/admin/eval-logs?ids=${ids}`, {
+          method: 'DELETE'
+        })
+        if (res.ok) {
+          setLogs(prev => prev.filter(l => !selectedIds.has(l.id)))
+          setSelectedIds(new Set())
+        }
+      }
+    } catch (error) {
+      console.error('删除失败:', error)
+      alert('删除失败，请重试')
+    } finally {
+      setIsDeleting(false)
+      setShowDeleteModal(false)
+      setLogToDelete(null)
+    }
+  }
 
   const exportLogs = () => {
     const csv = [
@@ -74,13 +145,24 @@ export default function EvalLogsPageClient({ logs }: EvalLogsPageProps) {
           <h1 className="text-2xl font-bold">用户输入记录</h1>
         </div>
         
-        <button
-          onClick={exportLogs}
-          className="flex items-center gap-2 px-4 py-2 rounded-lg border hover:bg-muted"
-        >
-          <Download className="w-4 h-4" />
-          导出
-        </button>
+        <div className="flex items-center gap-3">
+          {selectedIds.size > 0 && (
+            <button
+              onClick={handleBatchDelete}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+              批量删除 ({selectedIds.size})
+            </button>
+          )}
+          <button
+            onClick={exportLogs}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg border hover:bg-muted"
+          >
+            <Download className="w-4 h-4" />
+            导出
+          </button>
+        </div>
       </div>
 
       <div className="flex gap-4 mb-6">
@@ -111,28 +193,52 @@ export default function EvalLogsPageClient({ logs }: EvalLogsPageProps) {
         <table className="w-full">
           <thead className="bg-muted/50">
             <tr>
-              <th className="px-6 py-3 text-left text-sm font-medium">时间</th>
-              <th className="px-6 py-3 text-left text-sm font-medium">用户</th>
-              <th className="px-6 py-3 text-left text-sm font-medium">模式</th>
-              <th className="px-6 py-3 text-left text-sm font-medium">输入内容</th>
-              <th className="px-6 py-3 text-left text-sm font-medium">Token用量</th>
-              <th className="px-6 py-3 text-left text-sm font-medium">模型</th>
-              <th className="px-6 py-3 text-left text-sm font-medium">操作</th>
+              <th className="px-4 py-3 text-left">
+                <button
+                  onClick={toggleSelectAll}
+                  className="flex items-center gap-2 hover:bg-muted/50 p-1 rounded"
+                >
+                  {selectedIds.size === filteredLogs.length && filteredLogs.length > 0 ? (
+                    <CheckSquare className="w-5 h-5 text-blue-600" />
+                  ) : (
+                    <Square className="w-5 h-5 text-muted-foreground" />
+                  )}
+                </button>
+              </th>
+              <th className="px-4 py-3 text-left text-sm font-medium">时间</th>
+              <th className="px-4 py-3 text-left text-sm font-medium">用户</th>
+              <th className="px-4 py-3 text-left text-sm font-medium">模式</th>
+              <th className="px-4 py-3 text-left text-sm font-medium">输入内容</th>
+              <th className="px-4 py-3 text-left text-sm font-medium">Token用量</th>
+              <th className="px-4 py-3 text-left text-sm font-medium">模型</th>
+              <th className="px-4 py-3 text-left text-sm font-medium">操作</th>
             </tr>
           </thead>
           <tbody className="divide-y">
             {filteredLogs.map((log) => (
-              <tr key={log.id} className="hover:bg-muted/30">
-                <td className="px-6 py-4 text-sm">
+              <tr key={log.id} className={cn("hover:bg-muted/30", selectedIds.has(log.id) && "bg-blue-50/50")}>
+                <td className="px-4 py-4">
+                  <button
+                    onClick={() => toggleSelect(log.id)}
+                    className="p-1 hover:bg-muted/50 rounded"
+                  >
+                    {selectedIds.has(log.id) ? (
+                      <CheckSquare className="w-5 h-5 text-blue-600" />
+                    ) : (
+                      <Square className="w-5 h-5 text-muted-foreground" />
+                    )}
+                  </button>
+                </td>
+                <td className="px-4 py-4 text-sm">
                   {new Date(log.createdAt).toLocaleString('zh-CN')}
                 </td>
-                <td className="px-6 py-4 text-sm">
+                <td className="px-4 py-4 text-sm">
                   <div className="flex flex-col">
                     <span className="font-medium">{log.userEmail || <span className="text-muted-foreground">未知用户</span>}</span>
                     {log.userName && <span className="text-xs text-muted-foreground">{log.userName}</span>}
                   </div>
                 </td>
-                <td className="px-6 py-4">
+                <td className="px-4 py-4">
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                     log.type === 'SUGGESTION' 
                       ? 'bg-blue-100 text-blue-700' 
@@ -141,15 +247,15 @@ export default function EvalLogsPageClient({ logs }: EvalLogsPageProps) {
                     {typeLabels[log.type] || log.type}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-sm max-w-md">
+                <td className="px-4 py-4 text-sm max-w-md">
                   <div className="truncate" title={log.input}>
                     {log.input}
                   </div>
                 </td>
-                <td className="px-6 py-4 text-sm text-muted-foreground">
+                <td className="px-4 py-4 text-sm text-muted-foreground">
                   {log.tokensUsed || '-'}
                 </td>
-                <td className="px-6 py-4 text-sm">
+                <td className="px-4 py-4 text-sm">
                   <div className="flex flex-col">
                     <span className="font-medium">{log.modelName || '-'}</span>
                     {log.modelProvider && (
@@ -157,20 +263,29 @@ export default function EvalLogsPageClient({ logs }: EvalLogsPageProps) {
                     )}
                   </div>
                 </td>
-                <td className="px-6 py-4">
-                  <button
-                    onClick={() => setSelectedLog(log)}
-                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
-                  >
-                    <Eye className="w-4 h-4" />
-                    查看详情
-                  </button>
+                <td className="px-4 py-4">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setSelectedLog(log)}
+                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                    >
+                      <Eye className="w-4 h-4" />
+                      查看
+                    </button>
+                    <button
+                      onClick={() => handleDelete(log)}
+                      className="p-2 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
+                      title="删除"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
             {filteredLogs.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-6 py-12 text-center text-muted-foreground">
+                <td colSpan={8} className="px-6 py-12 text-center text-muted-foreground">
                   暂无评测记录
                 </td>
               </tr>
@@ -254,6 +369,80 @@ export default function EvalLogsPageClient({ logs }: EvalLogsPageProps) {
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* Delete button in modal */}
+            <div className="px-6 py-4 border-t bg-gray-50">
+              <button
+                onClick={() => {
+                  setSelectedLog(null)
+                  handleDelete(selectedLog)
+                }}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+              >
+                <Trash2 className="w-4 h-4" />
+                删除此记录
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-2 bg-red-100 rounded-full">
+                <AlertTriangle className="w-6 h-6 text-red-600" />
+              </div>
+              <h3 className="text-lg font-semibold">确认删除</h3>
+            </div>
+            
+            <p className="text-muted-foreground mb-6">
+              {logToDelete ? (
+                <>
+                  确定要删除这条评测记录吗？此操作<strong>不可恢复</strong>。
+                  <br /><br />
+                  <span className="text-sm">用户: {logToDelete.userEmail || '未知'}</span>
+                  <br />
+                  <span className="text-sm">时间: {new Date(logToDelete.createdAt).toLocaleString('zh-CN')}</span>
+                </>
+              ) : (
+                <>
+                  确定要删除选中的 <strong>{selectedIds.size}</strong> 条记录吗？此操作<strong>不可恢复</strong>。
+                </>
+              )}
+            </p>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  setShowDeleteModal(false)
+                  setLogToDelete(null)
+                }}
+                className="flex-1 py-2.5 rounded-lg border hover:bg-muted transition-colors"
+                disabled={isDeleting}
+              >
+                取消
+              </button>
+              <button
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className="flex-1 py-2.5 rounded-lg bg-red-600 text-white hover:bg-red-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+              >
+                {isDeleting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    删除中...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    确认删除
+                  </>
+                )}
+              </button>
             </div>
           </div>
         </div>
