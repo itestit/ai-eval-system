@@ -8,6 +8,7 @@ export default function ConfigPage() {
   const [configs, setConfigs] = useState({
     siteTitle: 'AI智能评测系统',
     pageHeader: 'AI智能评测',
+    pageSubHeader: 'AI 智能评测',
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -29,6 +30,7 @@ export default function ConfigPage() {
       const configMap: Record<string, string> = {
         siteTitle: 'AI智能评测系统',
         pageHeader: 'AI智能评测',
+        pageSubHeader: 'AI 智能评测',
       }
       if (data.configs && Array.isArray(data.configs)) {
         data.configs.forEach((c: { key: string; value: string }) => {
@@ -39,6 +41,7 @@ export default function ConfigPage() {
       setConfigs({
         siteTitle: configMap.siteTitle,
         pageHeader: configMap.pageHeader,
+        pageSubHeader: configMap.pageSubHeader,
       })
     } catch (err) {
       console.error('获取配置失败:', err)
@@ -63,6 +66,7 @@ export default function ConfigPage() {
         const configMap: Record<string, string> = {
           siteTitle: 'AI智能评测系统',
           pageHeader: 'AI智能评测',
+          pageSubHeader: 'AI 智能评测',
         }
         if (configData.configs && Array.isArray(configData.configs)) {
           configData.configs.forEach((c: { key: string; value: string }) => {
@@ -73,6 +77,7 @@ export default function ConfigPage() {
         setConfigs({
           siteTitle: configMap.siteTitle,
           pageHeader: configMap.pageHeader,
+          pageSubHeader: configMap.pageSubHeader,
         })
         setLoading(false)
       })
@@ -94,6 +99,7 @@ export default function ConfigPage() {
           configs: [
             { key: 'siteTitle', value: configs.siteTitle },
             { key: 'pageHeader', value: configs.pageHeader },
+            { key: 'pageSubHeader', value: configs.pageSubHeader },
           ],
         }),
       })
@@ -180,8 +186,8 @@ export default function ConfigPage() {
               <Type className="w-5 h-5 text-purple-600" />
             </div>
             <div>
-              <h2 className="font-semibold text-gray-900">板块名称</h2>
-              <p className="text-sm text-gray-500">用户前台页面顶部显示的标题</p>
+              <h2 className="font-semibold text-gray-900">主标题</h2>
+              <p className="text-sm text-gray-500">用户前台页面顶部显示的主标题</p>
             </div>
           </div>
           <input
@@ -191,6 +197,28 @@ export default function ConfigPage() {
               setConfigs((prev) => ({ ...prev, pageHeader: e.target.value }))
             }
             placeholder="AI智能评测"
+            className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+
+        {/* Page SubHeader */}
+        <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="bg-pink-100 p-2 rounded-lg">
+              <Type className="w-5 h-5 text-pink-600" />
+            </div>
+            <div>
+              <h2 className="font-semibold text-gray-900">副标题</h2>
+              <p className="text-sm text-gray-500">用户前台页面顶部主标题下方的小字</p>
+            </div>
+          </div>
+          <input
+            type="text"
+            value={configs.pageSubHeader}
+            onChange={(e) =>
+              setConfigs((prev) => ({ ...prev, pageSubHeader: e.target.value }))
+            }
+            placeholder="AI 智能评测"
             className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
@@ -224,8 +252,12 @@ export default function ConfigPage() {
             <span className="text-sm font-medium">{configs.siteTitle || 'AI智能评测系统'}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-500 w-24">页面头部：</span>
+            <span className="text-sm text-gray-500 w-24">主标题：</span>
             <span className="text-sm font-medium">{configs.pageHeader || 'AI智能评测'}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500 w-24">副标题：</span>
+            <span className="text-sm font-medium">{configs.pageSubHeader || 'AI 智能评测'}</span>
           </div>
         </div>
       </div>

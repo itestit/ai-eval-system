@@ -36,15 +36,16 @@ interface Section {
 
 interface EvalPageProps {
   user: UserData
+  pageHeader: string
+  pageSubHeader: string
 }
 
-export default function EvalPageClient({ user }: EvalPageProps) {
+export default function EvalPageClient({ user, pageHeader, pageSubHeader }: EvalPageProps) {
   const [input, setInput] = useState('')
   const [output, setOutput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showNoCreditModal, setShowNoCreditModal] = useState(false)
-  const [pageHeader, setPageHeader] = useState('AI智能评测')
   
   // 板块相关状态
   const [sections, setSections] = useState<Section[]>([])
@@ -62,6 +63,9 @@ export default function EvalPageClient({ user }: EvalPageProps) {
       .then(data => {
         if (data.pageHeader) {
           setPageHeader(data.pageHeader)
+        }
+        if (data.pageSubHeader) {
+          setPageSubHeader(data.pageSubHeader)
         }
       })
       .catch(console.error)
@@ -203,7 +207,7 @@ export default function EvalPageClient({ user }: EvalPageProps) {
             </div>
             <div className="hidden sm:block">
               <h1 className="text-base font-semibold text-slate-800 dark:text-slate-100">{pageHeader}</h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400">AI 智能评测</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{pageSubHeader}</p>
             </div>
           </div>
           

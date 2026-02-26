@@ -7,7 +7,7 @@ export async function GET() {
     const configs = await prisma.systemConfig.findMany({
       where: {
         key: {
-          in: ['siteTitle', 'pageHeader'],
+          in: ['siteTitle', 'pageHeader', 'pageSubHeader'],
         },
       },
     })
@@ -15,6 +15,7 @@ export async function GET() {
     const configMap: Record<string, string> = {
       siteTitle: 'AI智能评测系统',
       pageHeader: 'AI智能评测',
+      pageSubHeader: 'AI 智能评测',
     }
 
     configs.forEach((config) => {
@@ -33,6 +34,7 @@ export async function GET() {
     const response = NextResponse.json({
       siteTitle: 'AI智能评测系统',
       pageHeader: 'AI智能评测',
+      pageSubHeader: 'AI 智能评测',
     })
     response.headers.set('Cache-Control', 'no-store')
     return response
