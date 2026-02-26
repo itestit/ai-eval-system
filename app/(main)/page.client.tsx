@@ -57,19 +57,6 @@ export default function EvalPageClient({ user, pageHeader, pageSubHeader }: Eval
 
   // Fetch config and sections on mount
   useEffect(() => {
-    // 获取页面配置
-    fetch('/api/config?t=' + Date.now())
-      .then(res => res.json())
-      .then(data => {
-        if (data.pageHeader) {
-          setPageHeader(data.pageHeader)
-        }
-        if (data.pageSubHeader) {
-          setPageSubHeader(data.pageSubHeader)
-        }
-      })
-      .catch(console.error)
-    
     // 获取可访问的板块
     fetch('/api/user/sections')
       .then(res => {
