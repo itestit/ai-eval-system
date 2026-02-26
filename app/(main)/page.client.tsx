@@ -195,50 +195,68 @@ export default function EvalPageClient({ user }: EvalPageProps) {
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Header */}
-      <header className="h-16 border-b flex items-center justify-between px-4 lg:px-6 bg-card">
+      <header className="h-16 border-b flex items-center justify-between px-4 lg:px-6 bg-gradient-to-r from-slate-50 to-white dark:from-slate-950 dark:to-slate-900">
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-primary" />
-            <h1 className="text-lg font-semibold">{pageHeader}</h1>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <div className="hidden sm:block">
+              <h1 className="text-base font-semibold text-slate-800 dark:text-slate-100">{pageHeader}</h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400">AI 智能评测</p>
+            </div>
           </div>
           
           {/* 板块选择器 */}
           {sections.length > 0 && (
-            <div className="hidden md:flex items-center gap-2 ml-4 pl-4 border-l">
-              <LayoutGrid className="w-4 h-4 text-muted-foreground" />
-              <select
-                value={selectedSectionId}
-                onChange={(e) => setSelectedSectionId(e.target.value)}
-                className="px-3 py-1.5 rounded-lg border text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/20 min-w-[140px]"
-                disabled={isLoading}
-              >
-                {sectionsLoading ? (
-                  <option>加载中...</option>
-                ) : (
-                  sections.map((section) => (
-                    <option key={section.id} value={section.id}>
-                      {section.name}
-                    </option>
-                  ))
-                )}
-              </select>
+            <div className="hidden md:flex items-center gap-2 ml-2 pl-4 border-l border-slate-200 dark:border-slate-700">
+              <div className="relative">
+                <LayoutGrid className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <select
+                  value={selectedSectionId}
+                  onChange={(e) => setSelectedSectionId(e.target.value)}
+                  className="pl-9 pr-8 py-2 rounded-full border-0 bg-slate-100 dark:bg-slate-800 text-sm font-medium text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors min-w-[160px] appearance-none cursor-pointer"
+                  disabled={isLoading}
+                >
+                  {sectionsLoading ? (
+                    <option>加载中...</option>
+                  ) : (
+                    sections.map((section) => (
+                      <option key={section.id} value={section.id}>
+                        {section.name}
+                      </option>
+                    ))
+                  )}
+                </select>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                  <svg className="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
             </div>
           )}
         </div>
         
-        <div className="flex items-center gap-4">
-          <div className="text-sm text-muted-foreground">
-            剩余次数：<span className={cn(
-              "font-medium",
-              remainingZero ? "text-destructive" : "text-primary"
-            )}>{user.remainingEvals}</span>
+        <div className="flex items-center gap-3">
+          <div className={cn(
+            "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium",
+            remainingZero 
+              ? "bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400" 
+              : "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400"
+          )}>
+            <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
+            <span>剩余 {user.remainingEvals} 次</span>
           </div>
+          
           <button
             onClick={() => router.push('/settings')}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-muted transition-colors"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors group"
           >
-            <User className="w-4 h-4" />
-            <span className="hidden sm:inline text-sm">{user.name || user.email}</span>
+            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+              <span className="text-white text-xs font-bold">{(user.name || user.email).charAt(0).toUpperCase()}</span>
+            </div>
+            <span className="hidden sm:inline text-sm text-slate-700 dark:text-slate-200 font-medium">{user.name || user.email}</span>
           </button>
         </div>
       </header>
