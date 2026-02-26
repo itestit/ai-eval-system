@@ -49,8 +49,13 @@ export default async function AdminLayout({
     <div className="min-h-screen flex">
       {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-gray-200 flex flex-col">
-        <div className="h-16 flex items-center px-6 border-b border-gray-200 bg-gray-900">
-          <h1 className="font-bold text-white text-lg truncate">{siteTitle}</h1>
+        <div className="min-h-[4rem] flex items-center px-4 py-3 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-indigo-600">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center flex-shrink-0">
+              <Settings className="w-5 h-5 text-white" />
+            </div>
+            <h1 className="font-semibold text-white text-sm leading-tight break-words">{siteTitle}</h1>
+          </div>
         </div>
         
         <nav className="flex-1 p-4">
