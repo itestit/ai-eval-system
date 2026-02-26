@@ -37,7 +37,10 @@ export async function POST(req: NextRequest) {
   try {
     await requireAdmin()
 
-    const { name, description, promptTemplateId, visibility, accessUserIds, sortOrder } = await req.json()
+    const { 
+      name, description, promptTemplateId, visibility, accessUserIds, sortOrder, isActive,
+      inputLabel, inputPlaceholder, submitButtonText, resultLabel, emptyResultText, loadingText 
+    } = await req.json()
 
     if (!name) {
       return Response.json({ error: '板块名称不能为空' }, { status: 400 })
@@ -54,6 +57,14 @@ export async function POST(req: NextRequest) {
         promptTemplateId: cleanPromptTemplateId,
         visibility: visibility || 'ALL',
         sortOrder: sortOrder || 0,
+        isActive: isActive !== undefined ? isActive : true,
+        // UI 配置字段
+        inputLabel: inputLabel || undefined,
+        inputPlaceholder: inputPlaceholder || undefined,
+        submitButtonText: submitButtonText || undefined,
+        resultLabel: resultLabel || undefined,
+        emptyResultText: emptyResultText || undefined,
+        loadingText: loadingText || undefined,
         ...(visibility === 'SPECIFIC' && accessUserIds?.length > 0 ? {
           accessUsers: {
             create: accessUserIds.map((userId: string) => ({ userId }))
@@ -88,7 +99,10 @@ export async function PATCH(req: NextRequest) {
   try {
     await requireAdmin()
 
-    const { id, name, description, promptTemplateId, visibility, accessUserIds, isActive, sortOrder } = await req.json()
+    const { 
+      id, name, description, promptTemplateId, visibility, accessUserIds, isActive, sortOrder,
+      inputLabel, inputPlaceholder, submitButtonText, resultLabel, emptyResultText, loadingText 
+    } = await req.json()
 
     if (!id) {
       return Response.json({ error: '板块ID不能为空' }, { status: 400 })
@@ -114,6 +128,13 @@ export async function PATCH(req: NextRequest) {
         visibility,
         isActive,
         sortOrder,
+        // UI 配置字段 - 空字符串转为 null，undefined 则不更新
+        inputLabel: inputLabel === '' ? null : inputLabel,
+        inputPlaceholder: inputPlaceholder === '' ? null : inputPlaceholder,
+        submitButtonText: submitButtonText === '' ? null : submitButtonText,
+        resultLabel: resultLabel === '' ? null : resultLabel,
+        emptyResultText: emptyResultText === '' ? null : emptyResultText,
+        loadingText: loadingText === '' ? null : loadingText,
         ...(visibility === 'SPECIFIC' && accessUserIds?.length > 0 ? {
           accessUsers: {
             create: accessUserIds.map((userId: string) => ({ userId }))

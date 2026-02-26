@@ -28,7 +28,14 @@ export default async function SectionsPage() {
     const formattedSections = sections.map(s => ({
       ...s,
       createdAt: s.createdAt.toISOString(),
-      updatedAt: s.updatedAt.toISOString()
+      updatedAt: s.updatedAt.toISOString(),
+      // UI 配置字段 - 确保它们被包含
+      inputLabel: s.inputLabel,
+      inputPlaceholder: s.inputPlaceholder,
+      submitButtonText: s.submitButtonText,
+      resultLabel: s.resultLabel,
+      emptyResultText: s.emptyResultText,
+      loadingText: s.loadingText
     }))
 
     return <SectionsPageClient 

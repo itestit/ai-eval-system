@@ -25,6 +25,13 @@ interface Section {
     type: string
     systemPrompt: string
   } | null
+  // UI 配置字段
+  inputLabel: string | null
+  inputPlaceholder: string | null
+  submitButtonText: string | null
+  resultLabel: string | null
+  emptyResultText: string | null
+  loadingText: string | null
 }
 
 interface EvalPageProps {
@@ -270,15 +277,18 @@ export default function EvalPageClient({ user }: EvalPageProps) {
         <div className="flex-1 flex flex-col border-r">
           <div className="flex-1 p-4 lg:p-6">
             <label className="block text-sm font-medium mb-2 text-muted-foreground">
-              输入需要评测的文本
+              {selectedSection?.inputLabel || '输入需要评测的文本'}
             </label>
             <textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder={selectedSection?.promptTemplate?.systemPrompt 
-                ? `当前使用模板：${selectedSection.promptTemplate.name}\n在此粘贴您需要评测的文本内容...`
-                : "在此粘贴您需要评测的文本内容..."
-              }
+              placeholder={(() => {
+                const basePlaceholder = selectedSection?.inputPlaceholder || '在此粘贴您需要评测的文本内容...'
+                if (selectedSection?.promptTemplate?.systemPrompt) {
+                  return `当前使用模板：${selectedSection.promptTemplate.name}\n${basePlaceholder}`
+                }
+                return basePlaceholder
+              })()}
               className="w-full h-full min-h-[300px] resize-none rounded-lg border bg-background p-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
               disabled={isLoading || remainingZero}
             />
@@ -310,7 +320,7 @@ export default function EvalPageClient({ user }: EvalPageProps) {
               ) : (
                 <>
                   <Send className="w-4 h-4" />
-                  开始评测
+                  {selectedSection?.submitButtonText || '开始评测'}
                 </>
               )}
             </button>
@@ -322,7 +332,7 @@ export default function EvalPageClient({ user }: EvalPageProps) {
           <div className="flex-1 p-4 lg:p-6 overflow-auto" ref={outputRef}>
             <div className="flex items-center justify-between mb-2">
               <label className="text-sm font-medium text-muted-foreground">
-                评测结果
+                {selectedSection?.resultLabel || '评测结果'}
               </label>
               {output && (
                 <button
@@ -355,10 +365,10 @@ export default function EvalPageClient({ user }: EvalPageProps) {
                   {isLoading ? (
                     <div className="flex flex-col items-center gap-3">
                       <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
-                      <p className="text-sm">AI 正在分析中...</p>
+                      <p className="text-sm">{selectedSection?.loadingText || 'AI 正在分析中...'}</p>
                     </div>
                   ) : (
-                    <p className="text-sm">评测结果将在这里显示</p>
+                    <p className="text-sm">{selectedSection?.emptyResultText || '评测结果将在这里显示'}</p>
                   )}
                 </div>
               )}

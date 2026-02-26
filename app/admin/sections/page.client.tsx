@@ -14,6 +14,13 @@ interface Section {
   promptTemplateId: string | null
   promptTemplate: { id: string; name: string } | null
   accessUsers: { userId: string }[]
+  // UI 配置字段
+  inputLabel: string | null
+  inputPlaceholder: string | null
+  submitButtonText: string | null
+  resultLabel: string | null
+  emptyResultText: string | null
+  loadingText: string | null
   createdAt: string
   updatedAt: string
 }
@@ -41,6 +48,7 @@ export default function SectionsPageClient({ sections, promptTemplates, users }:
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingSection, setEditingSection] = useState<Section | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [uiConfigExpanded, setUiConfigExpanded] = useState(false)
 
   const [formData, setFormData] = useState({
     name: '',
@@ -49,7 +57,14 @@ export default function SectionsPageClient({ sections, promptTemplates, users }:
     visibility: 'ALL' as 'ALL' | 'SPECIFIC',
     accessUserIds: [] as string[],
     isActive: true,
-    sortOrder: 0
+    sortOrder: 0,
+    // UI 配置字段
+    inputLabel: '',
+    inputPlaceholder: '',
+    submitButtonText: '',
+    resultLabel: '',
+    emptyResultText: '',
+    loadingText: ''
   })
 
   const resetForm = () => {
@@ -60,7 +75,14 @@ export default function SectionsPageClient({ sections, promptTemplates, users }:
       visibility: 'ALL',
       accessUserIds: [],
       isActive: true,
-      sortOrder: sectionList.length
+      sortOrder: sectionList.length,
+      // UI 配置字段
+      inputLabel: '',
+      inputPlaceholder: '',
+      submitButtonText: '',
+      resultLabel: '',
+      emptyResultText: '',
+      loadingText: ''
     })
     setEditingSection(null)
   }
@@ -79,7 +101,14 @@ export default function SectionsPageClient({ sections, promptTemplates, users }:
       visibility: (section.visibility as 'ALL' | 'SPECIFIC') || 'ALL',
       accessUserIds: section.accessUsers.map(u => u.userId),
       isActive: section.isActive,
-      sortOrder: section.sortOrder
+      sortOrder: section.sortOrder,
+      // UI 配置字段
+      inputLabel: section.inputLabel || '',
+      inputPlaceholder: section.inputPlaceholder || '',
+      submitButtonText: section.submitButtonText || '',
+      resultLabel: section.resultLabel || '',
+      emptyResultText: section.emptyResultText || '',
+      loadingText: section.loadingText || ''
     })
     setIsModalOpen(true)
   }
@@ -317,6 +346,86 @@ export default function SectionsPageClient({ sections, promptTemplates, users }:
                     <option value="true">启用</option>
                     <option value="false">禁用</option>
                   </select>
+                </div>
+              </div>
+
+              {/* UI 配置折叠面板 */}
+              <div className="border rounded-lg overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setUiConfigExpanded(!uiConfigExpanded)}
+                  className="w-full px-4 py-3 bg-muted/50 flex items-center justify-between hover:bg-muted transition-colors"
+                >
+                  <span className="font-medium text-sm">界面文案配置（可选）</span>
+                  <span className="text-xs text-muted-foreground">{uiConfigExpanded ? '点击收起' : '点击展开'}</span>
+                </button>
+                <div className={cn("space-y-4 p-4", uiConfigExpanded ? "block" : "hidden")}>
+                  <div>
+                    <label className="block text-sm font-medium mb-1">输入框标签</label>
+                    <input
+                      type="text"
+                      value={formData.inputLabel}
+                      onChange={(e) => setFormData({ ...formData, inputLabel: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border"
+                      placeholder="默认：输入需要评测的文本"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">显示在输入框上方的标签文字</p>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">输入框占位符</label>
+                    <input
+                      type="text"
+                      value={formData.inputPlaceholder}
+                      onChange={(e) => setFormData({ ...formData, inputPlaceholder: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border"
+                      placeholder="默认：在此粘贴您需要评测的文本内容..."
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">提交按钮文字</label>
+                    <input
+                      type="text"
+                      value={formData.submitButtonText}
+                      onChange={(e) => setFormData({ ...formData, submitButtonText: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border"
+                      placeholder="默认：开始评测"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">结果面板标签</label>
+                    <input
+                      type="text"
+                      value={formData.resultLabel}
+                      onChange={(e) => setFormData({ ...formData, resultLabel: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border"
+                      placeholder="默认：评测结果"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">空结果提示</label>
+                    <input
+                      type="text"
+                      value={formData.emptyResultText}
+                      onChange={(e) => setFormData({ ...formData, emptyResultText: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border"
+                      placeholder="默认：评测结果将在这里显示"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-1">加载中提示</label>
+                    <input
+                      type="text"
+                      value={formData.loadingText}
+                      onChange={(e) => setFormData({ ...formData, loadingText: e.target.value })}
+                      className="w-full px-3 py-2 rounded-lg border"
+                      placeholder="默认：AI 正在分析中..."
+                    />
+                  </div>
                 </div>
               </div>
 

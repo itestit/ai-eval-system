@@ -98,6 +98,14 @@ model Section {
   visibility      String    @default("ALL")  // 可见性：ALL 或 SPECIFIC
   sortOrder       Int       @default(0)  // 排序顺序
 
+  // UI 配置字段
+  inputLabel          String?   @default("输入需要评测的文本")  // 输入框标签
+  inputPlaceholder    String?   @default("在此粘贴您需要评测的文本内容...")  // 输入框占位符
+  submitButtonText    String?   @default("开始评测")  // 提交按钮文字
+  resultLabel         String?   @default("评测结果")  // 结果面板标签
+  emptyResultText     String?   @default("评测结果将在这里显示")  // 空结果提示
+  loadingText         String?   @default("AI 正在分析中...")  // 加载中提示
+
   // Relations
   promptTemplateId String?
   promptTemplate  PromptTemplate? @relation(fields: [promptTemplateId], references: [id])

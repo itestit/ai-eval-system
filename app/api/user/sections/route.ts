@@ -21,7 +21,18 @@ export async function GET() {
         ]
       },
       orderBy: { sortOrder: 'asc' },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        sortOrder: true,
+        // UI 配置字段
+        inputLabel: true,
+        inputPlaceholder: true,
+        submitButtonText: true,
+        resultLabel: true,
+        emptyResultText: true,
+        loadingText: true,
         promptTemplate: {
           select: { 
             id: true, 
