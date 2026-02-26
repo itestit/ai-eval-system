@@ -38,7 +38,6 @@ yarn-error.log*
 *.db
 *.db-journal
 
-# Logs
-logs
+# Logs (but not app/admin/logs)
 *.log
 .vercel
