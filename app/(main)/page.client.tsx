@@ -285,7 +285,7 @@ export default function EvalPageClient({ user }: EvalPageProps) {
               placeholder={(() => {
                 const basePlaceholder = selectedSection?.inputPlaceholder || '在此粘贴您需要评测的文本内容...'
                 if (selectedSection?.promptTemplate?.systemPrompt) {
-                  return `当前使用模板：${selectedSection.promptTemplate.name}\n${basePlaceholder}`
+                  return `当前功能：${selectedSection.promptTemplate.name}\n${basePlaceholder}`
                 }
                 return basePlaceholder
               })()}
