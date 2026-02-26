@@ -5,41 +5,43 @@ import { PrismaClient } from '@prisma/client'
 // 执行数据库迁移的核心逻辑
 async function runMigration() {
   const prisma = new PrismaClient()
+  const results: string[] = []
   
   try {
     // 检查 Section 表是否存在
     try {
       await prisma.$queryRaw`SELECT 1 FROM "Section" LIMIT 1`
-      return { success: true, message: 'Section 表已存在' }
+      results.push('Section 表已存在')
     } catch {
       // 表不存在，创建表
+      // 创建 Section 表
+      await prisma.$executeRaw`
+        CREATE TABLE IF NOT EXISTS "Section" (
+          "id" TEXT PRIMARY KEY DEFAULT gen_random_uuid(),
+          "name" TEXT NOT NULL,
+          "description" TEXT,
+          "isActive" BOOLEAN DEFAULT true,
+          "visibility" TEXT DEFAULT 'ALL',
+          "sortOrder" INTEGER DEFAULT 0,
+          "promptTemplateId" TEXT,
+          "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+      `
+      results.push('创建 Section 表')
+      
+      // 创建 SectionAccess 表
+      await prisma.$executeRaw`
+        CREATE TABLE IF NOT EXISTS "SectionAccess" (
+          "id" TEXT PRIMARY KEY DEFAULT gen_random_uuid(),
+          "sectionId" TEXT NOT NULL,
+          "userId" TEXT NOT NULL,
+          "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE("sectionId", "userId")
+        )
+      `
+      results.push('创建 SectionAccess 表')
     }
-    
-    // 创建 Section 表
-    await prisma.$executeRaw`
-      CREATE TABLE IF NOT EXISTS "Section" (
-        "id" TEXT PRIMARY KEY DEFAULT gen_random_uuid(),
-        "name" TEXT NOT NULL,
-        "description" TEXT,
-        "isActive" BOOLEAN DEFAULT true,
-        "visibility" TEXT DEFAULT 'ALL',
-        "sortOrder" INTEGER DEFAULT 0,
-        "promptTemplateId" TEXT,
-        "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      )
-    `
-    
-    // 创建 SectionAccess 表
-    await prisma.$executeRaw`
-      CREATE TABLE IF NOT EXISTS "SectionAccess" (
-        "id" TEXT PRIMARY KEY DEFAULT gen_random_uuid(),
-        "sectionId" TEXT NOT NULL,
-        "userId" TEXT NOT NULL,
-        "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        UNIQUE("sectionId", "userId")
-      )
-    `
     
     // 添加外键
     try {
@@ -66,6 +68,7 @@ async function runMigration() {
     // 添加 EvalLog.sectionId 列
     try {
       await prisma.$executeRaw`ALTER TABLE "EvalLog" ADD COLUMN "sectionId" TEXT`
+      results.push('添加 EvalLog.sectionId 列')
     } catch {}
     
     try {
@@ -75,7 +78,33 @@ async function runMigration() {
       `
     } catch {}
     
-    return { success: true, message: '数据库迁移完成' }
+    // 添加 UI 配置字段
+    const uiColumns = [
+      { name: 'inputLabel', default: '输入需要评测的文本' },
+      { name: 'inputPlaceholder', default: '在此粘贴您需要评测的文本内容...' },
+      { name: 'submitButtonText', default: '开始评测' },
+      { name: 'resultLabel', default: '评测结果' },
+      { name: 'emptyResultText', default: '评测结果将在这里显示' },
+      { name: 'loadingText', default: 'AI 正在分析中...' }
+    ]
+    
+    for (const col of uiColumns) {
+      try {
+        await prisma.$executeRawUnsafe(`
+          ALTER TABLE "Section" ADD COLUMN "${col.name}" TEXT DEFAULT '${col.default}'
+        `)
+        results.push(`添加 ${col.name} 列`)
+      } catch (e: any) {
+        if (!e.message?.includes('already exists')) {
+          throw e
+        }
+      }
+    }
+    
+    return { 
+      success: true, 
+      message: results.length > 0 ? results.join(', ') : '无需迁移'
+    }
   } catch (error) {
     console.error('Migration error:', error)
     return { success: false, error: '迁移失败', details: String(error) }
