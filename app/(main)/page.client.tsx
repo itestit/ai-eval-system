@@ -319,7 +319,7 @@ export default function EvalPageClient({ user, pageHeader, pageSubHeader }: Eval
               {isLoading ? (
                 <>
                   <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
-                  评测中...
+                  处理中...
                 </>
               ) : remainingZero ? (
                 <>

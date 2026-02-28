@@ -152,6 +152,27 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('评测错误:', error)
     
+    // 记录错误日志到审计日志
+    try {
+      const session = await requireAuth().catch(() => null)
+      if (session) {
+        await prisma.auditLog.create({
+          data: {
+            userId: session.userId,
+            action: 'EVAL_ERROR',
+            metadata: {
+              error: error instanceof Error ? error.message : '未知错误',
+              stack: error instanceof Error ? error.stack : undefined,
+              sectionId: (await req.json().catch(() => ({}))).sectionId,
+              timestamp: new Date().toISOString(),
+            },
+          },
+        })
+      }
+    } catch (logError) {
+      console.error('记录错误日志失败:', logError)
+    }
+    
     if (error instanceof Error && error.message === 'Unauthorized') {
       return Response.json({ error: '未登录' }, { status: 401 })
     }

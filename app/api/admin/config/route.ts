@@ -11,7 +11,13 @@ export async function GET(req: NextRequest) {
     }
 
     const configs = await prisma.systemConfig.findMany()
-    return NextResponse.json({ configs })
+    
+    // Add cache headers to prevent caching
+    const response = NextResponse.json({ configs })
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+    response.headers.set('Pragma', 'no-cache')
+    response.headers.set('Expires', '0')
+    return response
   } catch (error) {
     console.error('Failed to get configs:', error)
     return NextResponse.json(

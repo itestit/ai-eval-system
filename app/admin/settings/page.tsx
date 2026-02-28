@@ -2,13 +2,15 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { Save, Settings, Globe, Type } from 'lucide-react'
+import { Save, Settings, Globe, Type, LogIn } from 'lucide-react'
 
 export default function ConfigPage() {
   const [configs, setConfigs] = useState({
     siteTitle: 'AI智能评测系统',
     pageHeader: 'AI智能评测',
     pageSubHeader: 'AI 智能评测',
+    loginTitle: '',
+    loginSubtitle: '智能辅助平台',
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -31,6 +33,8 @@ export default function ConfigPage() {
         siteTitle: 'AI智能评测系统',
         pageHeader: 'AI智能评测',
         pageSubHeader: 'AI 智能评测',
+        loginTitle: '',
+        loginSubtitle: '智能辅助平台',
       }
       if (data.configs && Array.isArray(data.configs)) {
         data.configs.forEach((c: { key: string; value: string }) => {
@@ -42,6 +46,8 @@ export default function ConfigPage() {
         siteTitle: configMap.siteTitle,
         pageHeader: configMap.pageHeader,
         pageSubHeader: configMap.pageSubHeader,
+        loginTitle: configMap.loginTitle,
+        loginSubtitle: configMap.loginSubtitle,
       })
     } catch (err) {
       console.error('获取配置失败:', err)
@@ -67,6 +73,8 @@ export default function ConfigPage() {
           siteTitle: 'AI智能评测系统',
           pageHeader: 'AI智能评测',
           pageSubHeader: 'AI 智能评测',
+          loginTitle: '',
+          loginSubtitle: '智能辅助平台',
         }
         if (configData.configs && Array.isArray(configData.configs)) {
           configData.configs.forEach((c: { key: string; value: string }) => {
@@ -78,6 +86,8 @@ export default function ConfigPage() {
           siteTitle: configMap.siteTitle,
           pageHeader: configMap.pageHeader,
           pageSubHeader: configMap.pageSubHeader,
+          loginTitle: configMap.loginTitle,
+          loginSubtitle: configMap.loginSubtitle,
         })
         setLoading(false)
       })
@@ -100,6 +110,8 @@ export default function ConfigPage() {
             { key: 'siteTitle', value: configs.siteTitle },
             { key: 'pageHeader', value: configs.pageHeader },
             { key: 'pageSubHeader', value: configs.pageSubHeader },
+            { key: 'loginTitle', value: configs.loginTitle },
+            { key: 'loginSubtitle', value: configs.loginSubtitle },
           ],
         }),
       })
@@ -223,6 +235,50 @@ export default function ConfigPage() {
           />
         </div>
 
+        {/* Login Page Title */}
+        <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="bg-orange-100 p-2 rounded-lg">
+              <LogIn className="w-5 h-5 text-orange-600" />
+            </div>
+            <div>
+              <h2 className="font-semibold text-gray-900">登录页标题</h2>
+              <p className="text-sm text-gray-500">登录页面左侧显示的大标题（如不设置则使用网站标题）</p>
+            </div>
+          </div>
+          <input
+            type="text"
+            value={configs.loginTitle}
+            onChange={(e) =>
+              setConfigs((prev) => ({ ...prev, loginTitle: e.target.value }))
+            }
+            placeholder="参政议政能力提升辅助系统"
+            className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+
+        {/* Login Page Subtitle */}
+        <div className="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="bg-teal-100 p-2 rounded-lg">
+              <LogIn className="w-5 h-5 text-teal-600" />
+            </div>
+            <div>
+              <h2 className="font-semibold text-gray-900">登录页副标题</h2>
+              <p className="text-sm text-gray-500">登录页面图标旁的小字标签</p>
+            </div>
+          </div>
+          <input
+            type="text"
+            value={configs.loginSubtitle}
+            onChange={(e) =>
+              setConfigs((prev) => ({ ...prev, loginSubtitle: e.target.value }))
+            }
+            placeholder="智能辅助平台"
+            className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+
         {/* Save Button */}
         <button
           onClick={handleSave}
@@ -258,6 +314,14 @@ export default function ConfigPage() {
           <div className="flex items-center gap-2">
             <span className="text-sm text-gray-500 w-24">副标题：</span>
             <span className="text-sm font-medium">{configs.pageSubHeader || 'AI 智能评测'}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500 w-24">登录页标题：</span>
+            <span className="text-sm font-medium">{configs.loginTitle || '（使用网站标题）'}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-500 w-24">登录页副标题：</span>
+            <span className="text-sm font-medium">{configs.loginSubtitle || '智能辅助平台'}</span>
           </div>
         </div>
       </div>
