@@ -1,6 +1,26 @@
 import { NextRequest } from 'next/server'
+import { z } from 'zod'
 import { requireAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { parseBody } from '@/lib/validation'
+
+const MAX_PROMPT_LENGTH = 50_000
+const PromptTypeEnum = z.enum(['SUGGESTION', 'POLICY'])
+
+const CreatePromptSchema = z.object({
+  name: z.string().trim().min(1, '名称不能为空').max(100, '名称过长'),
+  type: PromptTypeEnum,
+  systemPrompt: z.string().max(MAX_PROMPT_LENGTH, `systemPrompt 超过 ${MAX_PROMPT_LENGTH} 字符`).optional(),
+})
+
+const UpdatePromptSchema = z.object({
+  id: z.string().min(1, '缺少ID'),
+  name: z.string().trim().min(1).max(100),
+  type: PromptTypeEnum,
+  systemPrompt: z.string().min(1, 'systemPrompt 不能为空').max(MAX_PROMPT_LENGTH),
+  attachedFiles: z.array(z.string()).max(50).optional(),
+  modelId: z.string().max(50).nullish(),
+})
 
 
 export async function GET() {
@@ -26,9 +46,11 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     await requireAdmin()
-    
-    const { name, type, systemPrompt } = await req.json()
-    
+
+    const parsed = await parseBody(req, CreatePromptSchema)
+    if (!parsed.ok) return parsed.response
+    const { name, type, systemPrompt } = parsed.data
+
     const prompt = await prisma.promptTemplate.create({
       data: {
         name,
@@ -54,9 +76,11 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     await requireAdmin()
-    
-    const { id, name, type, systemPrompt, attachedFiles, modelId } = await req.json()
-    
+
+    const parsed = await parseBody(req, UpdatePromptSchema)
+    if (!parsed.ok) return parsed.response
+    const { id, name, type, systemPrompt, modelId } = parsed.data
+
     // Extract file references from prompt (支持中文文件名)
     const fileRefs = systemPrompt.match(/@([^\s\n]+)/g) || []
     const fileNames = fileRefs.map((ref: string) => ref.slice(1))

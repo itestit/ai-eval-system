@@ -1,6 +1,33 @@
 import { NextRequest } from 'next/server'
+import { z } from 'zod'
 import { requireAdmin } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { parseBody } from '@/lib/validation'
+
+// 板块字段的共享校验规则
+const sectionFields = {
+  name: z.string().trim().min(1, '板块名称不能为空').max(100, '板块名称过长'),
+  description: z.string().max(500).nullish(),
+  promptTemplateId: z.string().max(50).nullish(),
+  visibility: z.enum(['ALL', 'SPECIFIC']).default('ALL'),
+  accessUserIds: z.array(z.string()).max(1000).optional(),
+  sortOrder: z.number().int().min(0).max(9999).optional(),
+  isActive: z.boolean().optional(),
+  inputLabel: z.string().max(100).nullish(),
+  inputPlaceholder: z.string().max(500).nullish(),
+  submitButtonText: z.string().max(50).nullish(),
+  resultLabel: z.string().max(100).nullish(),
+  emptyResultText: z.string().max(500).nullish(),
+  loadingText: z.string().max(100).nullish(),
+}
+
+const CreateSectionSchema = z.object(sectionFields)
+const UpdateSectionSchema = z.object({
+  id: z.string().min(1, '板块ID不能为空'),
+  ...sectionFields,
+  name: sectionFields.name.optional(),
+  visibility: z.enum(['ALL', 'SPECIFIC']).optional(),
+})
 
 // GET /api/admin/sections - 获取所有板块
 export async function GET() {
@@ -37,16 +64,14 @@ export async function POST(req: NextRequest) {
   try {
     await requireAdmin()
 
-    const { 
+    const parsed = await parseBody(req, CreateSectionSchema)
+    if (!parsed.ok) return parsed.response
+    const {
       name, description, promptTemplateId, visibility, accessUserIds, sortOrder, isActive,
-      inputLabel, inputPlaceholder, submitButtonText, resultLabel, emptyResultText, loadingText 
-    } = await req.json()
+      inputLabel, inputPlaceholder, submitButtonText, resultLabel, emptyResultText, loadingText
+    } = parsed.data
 
-    if (!name) {
-      return Response.json({ error: '板块名称不能为空' }, { status: 400 })
-    }
-
-    // 将空字符串转换为 null
+    // 将空字符串/null 转换为 null
     const cleanPromptTemplateId = promptTemplateId || null
 
     // 创建板块
@@ -65,7 +90,7 @@ export async function POST(req: NextRequest) {
         resultLabel: resultLabel || undefined,
         emptyResultText: emptyResultText || undefined,
         loadingText: loadingText || undefined,
-        ...(visibility === 'SPECIFIC' && accessUserIds?.length > 0 ? {
+        ...(visibility === 'SPECIFIC' && accessUserIds && accessUserIds.length > 0 ? {
           accessUsers: {
             create: accessUserIds.map((userId: string) => ({ userId }))
           }
@@ -99,16 +124,14 @@ export async function PATCH(req: NextRequest) {
   try {
     await requireAdmin()
 
-    const { 
+    const parsed = await parseBody(req, UpdateSectionSchema)
+    if (!parsed.ok) return parsed.response
+    const {
       id, name, description, promptTemplateId, visibility, accessUserIds, isActive, sortOrder,
-      inputLabel, inputPlaceholder, submitButtonText, resultLabel, emptyResultText, loadingText 
-    } = await req.json()
+      inputLabel, inputPlaceholder, submitButtonText, resultLabel, emptyResultText, loadingText
+    } = parsed.data
 
-    if (!id) {
-      return Response.json({ error: '板块ID不能为空' }, { status: 400 })
-    }
-
-    // 将空字符串转换为 null
+    // 将空字符串/null 转换为 null
     const cleanPromptTemplateId = promptTemplateId || null
 
     // 先删除现有的访问权限（如果有）
@@ -135,7 +158,7 @@ export async function PATCH(req: NextRequest) {
         resultLabel: resultLabel === '' ? null : resultLabel,
         emptyResultText: emptyResultText === '' ? null : emptyResultText,
         loadingText: loadingText === '' ? null : loadingText,
-        ...(visibility === 'SPECIFIC' && accessUserIds?.length > 0 ? {
+        ...(visibility === 'SPECIFIC' && accessUserIds && accessUserIds.length > 0 ? {
           accessUsers: {
             create: accessUserIds.map((userId: string) => ({ userId }))
           }

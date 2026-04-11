@@ -1,6 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidateTag } from 'next/cache'
+import { z } from 'zod'
 import { prisma } from '@/lib/prisma'
 import { getSession } from '@/lib/auth'
+import { parseBody } from '@/lib/validation'
+
+const UpdateConfigSchema = z.object({
+  configs: z
+    .array(
+      z.object({
+        key: z.string().trim().min(1, 'key 不能为空').max(100),
+        value: z.string().max(10_000),
+      })
+    )
+    .min(1, 'configs 不能为空')
+    .max(100),
+})
 
 // GET /api/admin/config - Get all system configs (admin only)
 export async function GET(req: NextRequest) {
@@ -35,15 +50,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { configs } = await req.json()
-
-    // configs should be an array of { key, value }
-    if (!Array.isArray(configs)) {
-      return NextResponse.json(
-        { error: 'Invalid config format' },
-        { status: 400 }
-      )
-    }
+    const parsed = await parseBody(req, UpdateConfigSchema)
+    if (!parsed.ok) return parsed.response
+    const { configs } = parsed.data
 
     // Upsert all configs
     await Promise.all(
@@ -55,6 +64,9 @@ export async function POST(req: NextRequest) {
         })
       )
     )
+
+    // 使页面缓存立即失效
+    revalidateTag('system-config')
 
     return NextResponse.json({ success: true })
   } catch (error) {

@@ -66,6 +66,10 @@ model EvalLog {
   model           AIModel?  @relation(fields: [modelId], references: [id])
 
   createdAt       DateTime  @default(now())
+
+  @@index([userId])
+  @@index([sectionId])
+  @@index([createdAt])
 }
 
 enum EvalType {
@@ -168,6 +172,9 @@ model AuditLog {
   metadata        Json?     // 额外信息
 
   createdAt       DateTime  @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
 }
 
 model SystemConfig {

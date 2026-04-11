@@ -3,9 +3,18 @@ import bcrypt from 'bcryptjs'
 import { cookies } from 'next/headers'
 import { prisma } from './prisma'
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.NEXTAUTH_SECRET || 'fallback-secret-change-in-production'
-)
+let _jwtSecret: Uint8Array | null = null
+function getJwtSecret(): Uint8Array {
+  if (_jwtSecret) return _jwtSecret
+  const secret = process.env.NEXTAUTH_SECRET
+  if (!secret || secret.length < 16) {
+    throw new Error(
+      'NEXTAUTH_SECRET 环境变量未配置或长度不足（至少 16 字符）。拒绝使用 fallback 密钥。'
+    )
+  }
+  _jwtSecret = new TextEncoder().encode(secret)
+  return _jwtSecret
+}
 
 export interface JWTPayload extends JoseJWTPayload {
   userId: string
@@ -26,12 +35,12 @@ export async function createJWT(payload: JWTPayload): Promise<string> {
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('7d')
-    .sign(JWT_SECRET)
+    .sign(getJwtSecret())
 }
 
 export async function verifyJWT(token: string): Promise<JWTPayload | null> {
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET)
+    const { payload } = await jwtVerify(token, getJwtSecret())
     return payload as JWTPayload
   } catch {
     return null
