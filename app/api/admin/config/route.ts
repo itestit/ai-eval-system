@@ -17,6 +17,8 @@ const UpdateConfigSchema = z.object({
     .max(100),
 })
 
+export const dynamic = 'force-dynamic'
+
 // GET /api/admin/config - Get all system configs (admin only)
 export async function GET(req: NextRequest) {
   try {
