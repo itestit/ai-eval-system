@@ -3,7 +3,7 @@ import type { NextRequest } from 'next/server'
 import { verifyJWT } from './lib/auth'
 
 // Public paths that don't require authentication
-const publicPaths = ['/login', '/register', '/api/auth', '/reports']
+const publicPaths = ['/login', '/register', '/api/auth', '/reports', '/taimeng-update']
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
